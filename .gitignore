@@ -1,2 +1,4 @@
-resources/
-result/
+resources/*.json
+result/*.txt
+result/*.zip
+todo.txt
