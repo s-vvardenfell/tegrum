@@ -1,4 +1,5 @@
 resources/*.json
 result/*.txt
 result/*.zip
+*.json
 todo.txt
