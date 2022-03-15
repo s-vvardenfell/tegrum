@@ -45,18 +45,16 @@ func LoadConfig(file string) (*MailConfig, error) {
 }
 
 func SentMsgWithAttachment(cnfg *MailConfig) {
-	data := BuildMail(cnfg)
+	data := buildMail(cnfg)
 	auth := smtp.PlainAuth("", cnfg.User, cnfg.Password, cnfg.Host)
 	err := smtp.SendMail(cnfg.Address, auth, cnfg.Sender, cnfg.To, data)
 
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("Email sent successfully")
 }
 
-func BuildMail(mail *MailConfig) []byte {
+func buildMail(mail *MailConfig) []byte {
 	var buf bytes.Buffer
 
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", mail.Sender))
@@ -85,7 +83,6 @@ func BuildMail(mail *MailConfig) []byte {
 	buf.Write(b)
 	buf.WriteString(fmt.Sprintf("\r\n--%s", boundary))
 	buf.WriteString("--")
-
 	return buf.Bytes()
 }
 
@@ -101,6 +98,5 @@ func SendPlainMsg(cnfg *MailConfig) error {
 	if err := smtp.SendMail(cnfg.Address, auth, cnfg.Sender, cnfg.To, msg); err != nil {
 		return err
 	}
-
 	return nil
 }
