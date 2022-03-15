@@ -1,7 +1,10 @@
 package clouds
 
-type Cloud interface {
+type Downloader interface {
 	DownLoadFile(fileId, dst string)
+}
+
+type Uploader interface {
 	UploadFile(filename string) string
 }
 

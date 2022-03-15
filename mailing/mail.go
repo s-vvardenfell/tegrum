@@ -1,4 +1,4 @@
-package mail
+package mailing
 
 import (
 	"bytes"
@@ -24,6 +24,22 @@ type MailConfig struct {
 	Subject  string   `json:"subject"`
 	Body     string   `json:"body"`
 	FileName string
+}
+
+type Mail struct {
+}
+
+// Send message with attachement with parameters, specified in config-file
+// Recieves config file as "filename" arg
+func (m *Mail) UploadFile(filename string) string {
+	cnfg, err := LoadConfig("resources/TODO")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	SentMsgWithAttachment(cnfg)
+	return ""
 }
 
 func LoadConfig(file string) (*MailConfig, error) {

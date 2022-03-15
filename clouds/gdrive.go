@@ -127,7 +127,7 @@ func (gd *GDrive) ShowFilesList() {
 	}
 }
 
-// Deletes file by given file id
+// Delete file by given file id
 func (gd *GDrive) deleteFile(fileId string) {
 	f := gd.Srv.Files.Delete(fileId)
 
@@ -157,6 +157,7 @@ func (gd *GDrive) fileIdByName(filename string) string {
 	return ""
 }
 
+// Returns filename if present or empty string if no such file found
 func (gd *GDrive) fileNameById(fileid string) string {
 	r, err := gd.Srv.Files.List().PageSize(10).
 		Fields("nextPageToken, files(id, name)").Do()
