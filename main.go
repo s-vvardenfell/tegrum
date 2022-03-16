@@ -1,67 +1,44 @@
 package main
 
-import "github.com/s-vvardenfell/Backuper/cmd"
+import (
+	"fmt"
+	"time"
+)
 
 type DirsToBackup struct {
 	Dirs []string `json:"dirs"`
 }
 
 func main() {
-	cmd.Execute()
+	// cmd.Execute()
 
-	// archiver.Tarr("resources", "resources/")
-	// archiver.Untar("resources/resources.tar", "resources/")
-
-	// tar := archiver.Tar{}
-	// tar.Archive("resources/sum.txt", "resources/")
-
-	// zip := archiver.Zip{}
-	// if err := zip.Archive("resources/sum.txt", "resources/"); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// archiver.Gzip("resources/sum.txt", "resources/")
+	fmt.Println(time.Now().Format("02.Jan.2006_15:04:05"))
 
 }
 
 /*
+создание папки с именем архива! и послед-я ее архивация
+
+
+переименовать в tegrum + команды
+задачи из todo.txt сюда
+
 общий код в tar и zip - рефакторинг
 
 мб стоит сделать для backup дочернюю команду, которая отправляет архивы
 
-gzip для tar-архива/архивов
+gzip для tar-архива/архивов - не сделан
+
 сбор нескольких архивов в 1 для tar и zip
+пока сделан только сбор в одну папку нескольких архивов и послед-я архивация
+если я создаю архив с уникальным именем, то они будут копиться в хранилищах
+т.о. надо либо сделать команду на удаление(+) либо просто делать 1 статичное имя и хранить 1 экз в хранилищах (-)
 
-CLI
-tergum	daemon	start -p
-		stop
--p - устанавливает периодичность
-
-	backup	-g -y -t -e
-
-
--g - бекап в gdrive
--y - бекап в ya-disk
--t - бекап в tg
--e - бекап на почту
-
-сделать чтобы файл-конфиг и файл выход подавались в аргументах
-
-config читается в любом случае
-директорию, куда сохранять архив - указать в конфиге?
-
-
-нужны еще команды/опции tar или zip!
-режим работы "конфиг" и "cli" вот решение мб
-
-tegrum! поменять имя
-
-tergum backup -a tar -g -y -t -e
-tergum backup -a zip -g -y -t -e
-
+tegrum clean //удалит архивы старше, чем опция
 tergum retrieve -g -y -t
 
 ФУНКЦИОНАЛ ЗАГРУЗКИ бекап-файлов обратно
+и мб даже разархивация в нужные пути но хз, долго
 
 почта должна следовать интерфейсу cloud? она не сможет "загружать" файлы
 по сигнатуре тоже не подходит даже под Upload, надо либо в папку clouds перенести, переименовать на storages,

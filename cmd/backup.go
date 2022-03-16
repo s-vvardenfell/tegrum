@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/Backuper/clouds"
@@ -42,9 +43,7 @@ var backupCmd = &cobra.Command{
 		}
 
 		if o {
-			if err := arch.Archive(dirSrc, dstDir); err != nil {
-				log.Fatalf("error while single-file archive processed: %v", err)
-			}
+			archiveDir(arch)
 		} else if m {
 			archiveDirs(arch)
 		} else {
@@ -89,7 +88,7 @@ func init() {
 	backupCmd.Flags().BoolP("telegram", "t", false, "Sends backup archive to Telegram chat/channel")
 	backupCmd.Flags().BoolP("email", "e", false, "Sends backup archive via email")
 
-	backupCmd.Flags().BoolP("one", "o", true, "One file from flag arg")
+	backupCmd.Flags().BoolP("one", "o", false, "One file from flag arg")
 	backupCmd.Flags().BoolP("multiple", "m", false, "Multiple files listed in *.json file")
 
 	backupCmd.Flags().StringVarP(&dirSrc, "dirSrc", "s", "", "Config path")
@@ -120,7 +119,14 @@ func archiveDirs(arch archiver.ArchiverExtracter) {
 	var dirs DirsToBackup
 	json.Unmarshal([]byte(byteValue), &dirs)
 
+	archiveDir := time.Now().Format("02.Jan.2006_15:04:05_backup")
 	for _, dir := range dirs.Dirs {
-		arch.Archive(dir, dstDir)
+		arch.Archive(dir, dstDir+"/"+archiveDir+"/")
+	}
+}
+
+func archiveDir(arch archiver.ArchiverExtracter) {
+	if err := arch.Archive(dirSrc, dstDir); err != nil {
+		log.Fatalf("error while single-file archive processed: %v", err)
 	}
 }
