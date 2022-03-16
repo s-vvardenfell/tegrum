@@ -2,6 +2,7 @@ package archiver
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,8 +12,9 @@ import (
 type Zip struct {
 }
 
-// USAGE: archiver.Archive("result", "result/res.zip")
 func (z *Zip) Archive(source, target string) error {
+	filename := filepath.Base(source)
+	target = filepath.Join(target, fmt.Sprintf("%s.zip", filename))
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -72,7 +74,6 @@ func (z *Zip) Archive(source, target string) error {
 	return err
 }
 
-// USAGE: archiver.Unzip("result/archive.zip", "result/")
 func (z *Zip) Extract(archive, target string) error {
 	reader, err := zip.OpenReader(archive)
 	if err != nil {

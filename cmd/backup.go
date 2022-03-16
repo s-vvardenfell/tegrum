@@ -6,11 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/Backuper/clouds"
-	"github.com/s-vvardenfell/Backuper/mailing"
+	"github.com/s-vvardenfell/Backuper/email"
+	"github.com/s-vvardenfell/Backuper/telegram"
 	"github.com/spf13/cobra"
 )
 
@@ -29,43 +29,55 @@ var backupCmd = &cobra.Command{
 	Short: "Backups files immediately to specified storages",
 	Long:  `long descr: backups files immediately`,
 	Run: func(cmd *cobra.Command, _ []string) {
-		g, _ := cmd.Flags().GetBool("gdrive")
-		y, _ := cmd.Flags().GetBool("yadisk")
-		t, _ := cmd.Flags().GetBool("telegram")
-		e, _ := cmd.Flags().GetBool("email")
+		o, _ := cmd.Flags().GetBool("one")
+		m, _ := cmd.Flags().GetBool("multiple")
+		var arch archiver.ArchiverExtracter
 
 		if archiverType == "zip" {
-			arch := &archiver.Zip{}
-			archiveDirs(arch)
-
+			arch = &archiver.Zip{}
 		} else if archiverType == "tar" {
-			arch := &archiver.Tar{}
-			archiveDirs(arch)
-
+			arch = &archiver.Tar{}
 		} else {
 			log.Fatal("Wrong archiver type (zip and tar supported)")
 		}
 
+		if o {
+			if err := arch.Archive(dirSrc, dstDir); err != nil {
+				log.Fatalf("error while single-file archive processed: %v", err)
+			}
+		} else if m {
+			archiveDirs(arch)
+		} else {
+			log.Fatal("Single/multiple file mod not selected (use -o for single file or -m for multiple files listed in config)")
+		}
+
+		g, _ := cmd.Flags().GetBool("gdrive") //TODO обработка ошибок
+		y, _ := cmd.Flags().GetBool("yadisk")
+		t, _ := cmd.Flags().GetBool("telegram")
+		e, _ := cmd.Flags().GetBool("email")
+
+		storages := make([]clouds.Uploader, 0)
+
 		if g {
-			fmt.Println("Works gdrive")
-			cl := clouds.NewGDrive()
-			send(cl, ".gitkeep")
+			storages = append(storages, clouds.NewGDrive())
 		}
 
 		if y {
-			cl := clouds.NewYaDisk()
-			send(cl, ".gitkeep")
+			storages = append(storages, clouds.NewYaDisk())
 		}
 
 		if t {
-			fmt.Println("Works telegram")
+			storages = append(storages, &telegram.Telegram{})
 		}
 
 		if e {
-			fmt.Println("Works email")
-			cl := &mailing.Mail{}
-			send(cl, ".gitkeep")
+			storages = append(storages, &email.Mail{})
+		}
 
+		//TODO сюда можно горутины! сделать бенчмарк
+		for i := range storages {
+			// storages[i].UploadFile("resources/map.json.zip")
+			fmt.Printf("Загружаю в %T", storages[i])
 		}
 	},
 }
@@ -77,6 +89,9 @@ func init() {
 	backupCmd.Flags().BoolP("telegram", "t", false, "Sends backup archive to Telegram chat/channel")
 	backupCmd.Flags().BoolP("email", "e", false, "Sends backup archive via email")
 
+	backupCmd.Flags().BoolP("one", "o", true, "One file from flag arg")
+	backupCmd.Flags().BoolP("multiple", "m", false, "Multiple files listed in *.json file")
+
 	backupCmd.Flags().StringVarP(&dirSrc, "dirSrc", "s", "", "Config path")
 	backupCmd.MarkFlagRequired("dirSrc")
 
@@ -87,6 +102,9 @@ func init() {
 	backupCmd.MarkFlagRequired("archiver")
 }
 
+//TODO исп-ть type assertion или что-то такое чтобы определить тип архиватора и выполнить gzip для tar
+//Объединить неск архивов в один
+// Traverses a list of files from dirSrc and archives it
 func archiveDirs(arch archiver.ArchiverExtracter) {
 	f, err := os.Open(dirSrc)
 
@@ -103,11 +121,6 @@ func archiveDirs(arch archiver.ArchiverExtracter) {
 	json.Unmarshal([]byte(byteValue), &dirs)
 
 	for _, dir := range dirs.Dirs {
-		arch.Archive(dir, dstDir+"/"+filepath.Base(dir)+".zip")
+		arch.Archive(dir, dstDir)
 	}
-}
-
-//скорее всего надо внутри функции сделать цикл по архивам в результ-папке, собрать в 1 архив, добавить дату и отправить
-func send(cl clouds.Uploader, filename string) {
-	cl.UploadFile(filename)
 }
