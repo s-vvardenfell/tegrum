@@ -64,7 +64,6 @@ func (t *Telegram) DownLoadFile(fileId, dst string) {
 		log.Fatalf("file download error; code:%v, descr:%s", de.ErrorCode, de.Descr)
 	}
 
-	// ioutil.WriteFile(dst+"/"+filepath.Base(tr.Result.FilePath), bytesValue, 0644)
 	ioutil.WriteFile(filepath.Join(dst, filepath.Base(tr.Result.FilePath)), bytesValue, 0644)
 }
 
