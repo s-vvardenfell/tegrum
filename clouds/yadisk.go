@@ -5,7 +5,7 @@ import "fmt"
 type YaDisk struct {
 }
 
-func NewYaDisk() *YaDisk {
+func NewYaDisk(config string) *YaDisk {
 	return &YaDisk{}
 }
 

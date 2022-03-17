@@ -22,11 +22,10 @@ type GDrive struct {
 	Srv *drive.Service
 }
 
-//TODO уточнить, как правильно делать такие конструкторы, что возвращать
-func NewGDrive() *GDrive {
+func NewGDrive(credentials string) *GDrive {
 	ctx := context.Background()
 
-	b, err := ioutil.ReadFile("resources/credentials.json")
+	b, err := ioutil.ReadFile(credentials)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}

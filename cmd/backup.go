@@ -21,6 +21,12 @@ var (
 	archiverType string
 )
 
+var tgConfig = "resources/telegram.json"
+var gConfig = "resources/credentials.json"
+var yaConfig = ""
+
+const gdrive = "gdrive"
+
 type DirsToBackup struct {
 	Dirs []string `json:"dirs"`
 }
@@ -50,7 +56,7 @@ var backupCmd = &cobra.Command{
 			log.Fatal("Single/multiple file mod not selected (use -o for single file or -m for multiple files listed in config)")
 		}
 
-		g, _ := cmd.Flags().GetBool("gdrive") //TODO обработка ошибок
+		g, _ := cmd.Flags().GetBool("gdrive") //TODO обработка ошибок / const gdrive = "gdrive" - протестить
 		y, _ := cmd.Flags().GetBool("yadisk")
 		t, _ := cmd.Flags().GetBool("telegram")
 		e, _ := cmd.Flags().GetBool("email")
@@ -58,15 +64,15 @@ var backupCmd = &cobra.Command{
 		storages := make([]clouds.Uploader, 0)
 
 		if g {
-			storages = append(storages, clouds.NewGDrive())
+			storages = append(storages, clouds.NewGDrive(gConfig))
 		}
 
 		if y {
-			storages = append(storages, clouds.NewYaDisk())
+			storages = append(storages, clouds.NewYaDisk(yaConfig))
 		}
 
 		if t {
-			storages = append(storages, &telegram.Telegram{})
+			storages = append(storages, telegram.NewTelegram(tgConfig))
 		}
 
 		if e {
