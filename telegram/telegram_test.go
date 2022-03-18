@@ -3,32 +3,36 @@ package telegram
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-func TestTelegram_DownLoadFile(t *testing.T) {
-	path := "W:/Golang/src/Backuper/resources"
+const resourceDir = "W:/Golang/src/Backuper/resources"
+const resultDir = "W:/Golang/src/Backuper/result"
+const configName = "telegram.json"
+const testFile = "test_file.txt"
 
-	type args struct {
-		fileId string
-		dst    string
+func TestUploadDownload(t *testing.T) {
+
+	tg := NewTelegram(filepath.Join(resourceDir, configName))
+	var fileId string
+	var err error
+
+	t.Log("\tUploading file to telegramm chat")
+	{
+		fileId, err = tg.UploadFile(filepath.Join(resourceDir, testFile))
+		require.NoError(t, err)
+		require.True(t, (fileId != ""))
 	}
-	tests := []struct {
-		name string
-		tr   *Telegram
-		args args
-	}{
-		{
-			name: "base test",
-			tr:   NewTelegram(filepath.Join(path, "telegram.json")),
-			args: args{
-				fileId: "BQACAgIAAxkDAAJYHGIzUnxyLIkpxsmfeyIywP7wdt_VAAKMGAACEzqZSfw6u4tyzo_pIwQ",
-				dst:    "resources/",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.tr.DownLoadFile(tt.args.fileId, tt.args.dst)
-		})
+
+	t.Log("\tDownloading file from telegram chat")
+	{
+		url, err := fileLocationFromServer(tg.Token, fileId)
+		require.True(t, (url != ""))
+		require.NoError(t, err)
+
+		err = downloadFileFromServer(url, resultDir)
+		require.NoError(t, err)
+		require.FileExists(t, filepath.Join(resultDir, filepath.Base(url)))
 	}
 }

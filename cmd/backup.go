@@ -11,7 +11,6 @@ import (
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/Backuper/clouds"
 	"github.com/s-vvardenfell/Backuper/email"
-	"github.com/s-vvardenfell/Backuper/telegram"
 	"github.com/spf13/cobra"
 )
 
@@ -72,7 +71,7 @@ var backupCmd = &cobra.Command{
 		}
 
 		if t {
-			storages = append(storages, telegram.NewTelegram(tgConfig))
+			// storages = append(storages, telegram.NewTelegram(tgConfig))
 		}
 
 		if e {

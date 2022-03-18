@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/s-vvardenfell/Backuper/telegram"
@@ -38,8 +39,15 @@ func main() {
 	// fmt.Println(time.Now().Format("02.Jan.2006_15:04:05"))
 	os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
 	tg := telegram.NewTelegram("resources/telegram.json")
-	id := tg.UploadFile("resources/test_file.txt")
-	tg.DownLoadFile(id, "resources/")
+	id, err := tg.UploadFile("resources/test_file.txt")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := tg.DownLoadFile(id, "result/"); err != nil {
+		log.Fatal(err)
+	}
 
 	// files, err := ioutil.ReadDir(".")
 	// if err != nil {
@@ -56,6 +64,8 @@ TODO сделать это todo на темы
 
 #Telegram:
 -тесты! / переделать сигнатуру и интерфес для возвращения ошибок
+download file не должен его сохранять в файл, должен возвращать имя файла/адрес
+чтобы в другой код сохранял файл; так же можно будет проверить testify на наличие файла и сравнить содержимое с загруженным
 
 #Архивация
 -создание папки с именем архива! и послед-я ее архивация

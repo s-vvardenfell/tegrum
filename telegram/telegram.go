@@ -3,6 +3,7 @@ package telegram
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -39,48 +40,24 @@ func NewTelegram(config string) *Telegram {
 // Downloads a file from a telegram chat using a chat-bot
 // specified in the configuration
 // NOTE: files larger than 20 MB may not be downloaded because of API specification
-func (t *Telegram) DownLoadFile(fileId, dst string) {
-	client := &http.Client{
-		Timeout: time.Second * time.Duration(timeout),
+func (t *Telegram) DownLoadFile(fileId, dst string) error {
+	url, err := fileLocationFromServer(t.Token, fileId)
+	if err != nil {
+		return err
 	}
 
-	url := fmt.Sprintf("%s%s/getFile?file_id=%s", baseUrl, t.Token, fileId)
-	bytesValue := doRequest(client, http.MethodGet, url, nil)
-
-	var tr TelegramDownloadResponse
-	if err := json.Unmarshal(bytesValue, &tr); err != nil {
-		log.Fatal(err)
+	if err := downloadFileFromServer(url, dst); err != nil {
+		return err
 	}
-
-	if tr.Ok {
-		url = fmt.Sprintf("%s%s/%s", fileUrl, t.Token, tr.Result.FilePath)
-	}
-
-	bytesValue = doRequest(client, http.MethodGet, url, nil)
-
-	//trying to parse response; if can, there is an error
-	var de TelegramDownloadError
-	if err := json.Unmarshal(bytesValue, &de); err == nil {
-		log.Fatalf("file download error; code:%v, descr:%s", de.ErrorCode, de.Descr)
-	}
-
-	ioutil.WriteFile(filepath.Join(dst, filepath.Base(tr.Result.FilePath)), bytesValue, 0644)
+	return nil
 }
 
 // Uploads files up to 50 MB to the chat
 // using a chat bot specified in the configuration
-func (t *Telegram) UploadFile(filename string) string {
-	files, err := ioutil.ReadDir(filepath.Dir(filename))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range files {
-		if file.Name() == filepath.Base(filename) {
-			if file.Size() > 52428800 {
-				log.Fatal("Cannot upload files larger that 50 MB in Telegram")
-			}
-		}
+// returns file id from telegram server
+func (t *Telegram) UploadFile(filename string) (string, error) {
+	if err := checkSize(filename); err != nil {
+		return "", err
 	}
 
 	body := &bytes.Buffer{}
@@ -89,11 +66,11 @@ func (t *Telegram) UploadFile(filename string) string {
 	fw, _ := writer.CreateFormFile("document", filename)
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatalf("cannot open %s, %v", filename, err)
+		return "", fmt.Errorf("cannot open %s, %w", filename, err)
 	}
 	_, err = io.Copy(fw, file)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	writer.Close()
@@ -106,30 +83,82 @@ func (t *Telegram) UploadFile(filename string) string {
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body.Bytes()))
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	byteValue, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	var tr TelegramUploadResponse
 	if err := json.Unmarshal(byteValue, &tr); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if tr.Ok {
-		return tr.Result.Document.FileId
+		return tr.Result.Document.FileId, nil
 	}
-	return ""
+	return "", errors.New("file uploading to telegram error")
+}
+
+func checkSize(filename string) error {
+	files, err := ioutil.ReadDir(filepath.Dir(filename))
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.Name() == filepath.Base(filename) {
+			if file.Size() > 52428800 {
+				return errors.New("cannot upload files larger that 50 MB in Telegram")
+			}
+		}
+	}
+	return nil
+}
+
+func fileLocationFromServer(token, fileId string) (string, error) {
+	client := &http.Client{
+		Timeout: time.Second * time.Duration(timeout),
+	}
+	url := fmt.Sprintf("%s%s/getFile?file_id=%s", baseUrl, token, fileId)
+	bytesValue := doRequest(client, http.MethodGet, url, nil)
+
+	var tr TelegramDownloadResponse
+	if err := json.Unmarshal(bytesValue, &tr); err != nil {
+		return "", err
+	}
+
+	if tr.Ok {
+		return fmt.Sprintf("%s%s/%s", fileUrl, token, tr.Result.FilePath), nil
+	}
+	return "", errors.New("cannot get url with file location on telegram server")
+}
+
+func downloadFileFromServer(url, dst string) error {
+	client := &http.Client{
+		Timeout: time.Second * time.Duration(timeout),
+	}
+	bytesValue := doRequest(client, http.MethodGet, url, nil)
+
+	//trying to parse response; if can, there is an error
+	var de TelegramDownloadError
+	if err := json.Unmarshal(bytesValue, &de); err == nil {
+		return fmt.Errorf("file download error; code:%v, descr:%s; %w", de.ErrorCode, de.Descr, err)
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(dst, filepath.Base(url)), bytesValue, 0644); err != nil {
+		log.Fatalf("cannot write result file, %v", err)
+	}
+	return nil
 }
 
 func doRequest(client *http.Client, method, url string, body io.Reader) []byte {
