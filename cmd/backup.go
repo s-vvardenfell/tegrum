@@ -10,7 +10,6 @@ import (
 
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/Backuper/clouds"
-	"github.com/s-vvardenfell/Backuper/email"
 	"github.com/spf13/cobra"
 )
 
@@ -20,9 +19,10 @@ var (
 	archiverType string
 )
 
-var tgConfig = "resources/telegram.json"
-var gConfig = "resources/credentials.json"
-var yaConfig = ""
+const tgConfig = "resources/telegram.json"
+const gConfig = "resources/credentials.json"
+const yaConfig = ""
+const emailConfig = "resources/email.json"
 
 const gdrive = "gdrive"
 
@@ -71,11 +71,13 @@ var backupCmd = &cobra.Command{
 		}
 
 		if t {
+			fmt.Println("Tg works")
 			// storages = append(storages, telegram.NewTelegram(tgConfig))
 		}
 
 		if e {
-			storages = append(storages, &email.Mail{})
+			fmt.Println("Email works")
+			// storages = append(storages, email.NewMail(emailConfig))
 		}
 
 		//TODO сюда можно горутины! сделать бенчмарк

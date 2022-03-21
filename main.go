@@ -4,76 +4,32 @@ import (
 	"log"
 	"os"
 
-	"github.com/s-vvardenfell/Backuper/telegram"
+	"github.com/s-vvardenfell/Backuper/email"
 )
-
-type TelegramUploadResponse struct {
-	Ok     bool                 `json:"ok"`
-	Result TelegramUploadResult `json:"result"`
-}
-
-type TelegramDownloadResponse struct {
-	Ok     bool                     `json:"ok"`
-	Result TelegramResponseDocument `json:"result"`
-}
-
-type TelegramUploadResult struct {
-	Document TelegramResponseDocument `json:"document"`
-}
-
-type TelegramResponseDocument struct {
-	FileId       string `json:"file_id"`
-	FileUniqueId string `json:"file_unique_id"`
-	FilePath     string `json:"file_path"`
-}
-
-type TelegramDownloadError struct {
-	Ok        bool    `json:"ok"`
-	ErrorCode float64 `json:"error_code"`
-	Descr     string  `json:"description"`
-}
 
 func main() {
 	// cmd.Execute()
 
-	// fmt.Println(time.Now().Format("02.Jan.2006_15:04:05"))
 	os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
-	tg := telegram.NewTelegram("resources/telegram.json")
-	id, err := tg.UploadFile("resources/test_file.txt")
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	e := email.NewMail("resources/email.json")
 
-	if err := tg.DownLoadFile(id, "result/"); err != nil {
-		log.Fatal(err)
-	}
-
-	// files, err := ioutil.ReadDir(".")
-	// if err != nil {
+	// if err := e.SendPlainMsg("test subject", "test body"); err != nil {
 	// 	log.Fatal(err)
 	// }
 
-	// for _, file := range files {
-	// 	fmt.Println(file.Name(), file.Size())
-	// }
+	if err := e.SendMsgWithAttachment("result/file_23.txt"); err != nil {
+		log.Fatal(err)
+	}
 }
 
 /*
-TODO сделать это todo на темы
-
-#Telegram:
--тесты! / переделать сигнатуру и интерфес для возвращения ошибок
-download file не должен его сохранять в файл, должен возвращать имя файла/адрес
-чтобы в другой код сохранял файл; так же можно будет проверить testify на наличие файла и сравнить содержимое с загруженным
+TODO
 
 #Архивация
 -создание папки с именем архива! и послед-я ее архивация
 -общий код в tar и zip - рефакторинг
 -gzip для tar-архива/архивов
-
-#Mail
-вместо конфига - newMail(config string)
 
 -сбор нескольких архивов в 1 для tar и zip
 пока сделан только сбор в одну папку нескольких архивов и послед-я архивация
@@ -85,6 +41,8 @@ download file не должен его сохранять в файл, долж�
 UploadFile подумать чтобы возвращал ошибку, а не просто пустую строку как в telegram!
 
 #Общее
+Сообщения об успешной отправке/загрузке везде
+
 
 dst + "/" + filename
 везде где есть "/" нужно заменить вызовом ф-ии из пакета http, которая конкатенирует корректно
@@ -106,17 +64,6 @@ tergum retrieve -g -y -t
 и интерфейс тоже, либо оставить в пакете почты и не юзать интерфейс, в таком случае можно снова объединить интерфейс Cloud в 1
 
 Рефакторинг - конспект
-
-исп в отдельном файле для ответов от апи
-назыв "entities"
-type TelegramResponseResult struct {
-	FileId   string `json:"file_id"`
-	FilePath string `json:"file_path"`
-}
-type TelegramResponse struct {
-	Ok     bool                   `json:"ok"`
-	Result TelegramResponseResult `json:"result"`
-}
 
 выносить все адреса и тд в константы
 url := fmt.Sprintf("%s%s/getFile?file_id=%s", BASE_URL, botToken, fileId) использовать
