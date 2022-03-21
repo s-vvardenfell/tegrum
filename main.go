@@ -1,26 +1,11 @@
 package main
 
-import (
-	"log"
-	"os"
-
-	"github.com/s-vvardenfell/Backuper/email"
-)
+import "github.com/s-vvardenfell/Backuper/cmd"
 
 func main() {
-	// cmd.Execute()
+	cmd.Execute()
 
-	os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
-
-	e := email.NewMail("resources/email.json")
-
-	// if err := e.SendPlainMsg("test subject", "test body"); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	if err := e.SendMsgWithAttachment("result/file_23.txt"); err != nil {
-		log.Fatal(err)
-	}
+	// os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
 }
 
 /*
@@ -30,6 +15,7 @@ TODO
 -создание папки с именем архива! и послед-я ее архивация
 -общий код в tar и zip - рефакторинг
 -gzip для tar-архива/архивов
+Пароль для архивов
 
 -сбор нескольких архивов в 1 для tar и zip
 пока сделан только сбор в одну папку нескольких архивов и послед-я архивация
@@ -42,6 +28,11 @@ UploadFile подумать чтобы возвращал ошибку, а не 
 
 #Общее
 Сообщения об успешной отправке/загрузке везде
+Шифрование для smtp? Или хватит пароля на архив?
+Readme сделать, все нужные инструкции
+logrus
+работа как фоновый процесс?
+yandex реализация
 
 
 dst + "/" + filename
@@ -49,27 +40,15 @@ dst + "/" + filename
 сделать тоже для параметров
 
 возможно, download и upload все же должны возвращать ошибку
+должны ли вообще почта и тг следовать этим интерфейсам?
 
 -переименовать в tegrum + команды
 -задачи из todo.txt сюда
 
+# Очистка
 tegrum clean //удалит архивы старше, чем опция
-tergum retrieve -g -y -t
 
-ФУНКЦИОНАЛ ЗАГРУЗКИ бекап-файлов обратно
+# Получение
+tergum retrieve -g -y -t //скачивает последние бекап-архивы
 и мб даже разархивация в нужные пути но хз, долго
-
-почта должна следовать интерфейсу cloud? она не сможет "загружать" файлы
-по сигнатуре тоже не подходит даже под Upload, надо либо в папку clouds перенести, переименовать на storages,
-и интерфейс тоже, либо оставить в пакете почты и не юзать интерфейс, в таком случае можно снова объединить интерфейс Cloud в 1
-
-Рефакторинг - конспект
-
-выносить все адреса и тд в константы
-url := fmt.Sprintf("%s%s/getFile?file_id=%s", BASE_URL, botToken, fileId) использовать
-
-
-Config - структура
-исп filepath.Abs("config.yaml")
-
 */

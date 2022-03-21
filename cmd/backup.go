@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
+	"path/filepath"
 
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/Backuper/clouds"
+	"github.com/s-vvardenfell/Backuper/email"
+	"github.com/s-vvardenfell/Backuper/telegram"
 	"github.com/spf13/cobra"
 )
 
@@ -19,12 +21,14 @@ var (
 	archiverType string
 )
 
-const tgConfig = "resources/telegram.json"
-const gConfig = "resources/credentials.json"
+const resources = "W:/Golang/src/Backuper/resources"
+const tgConfig = "telegram.json"
+const gConfig = "credentials.json"
 const yaConfig = ""
-const emailConfig = "resources/email.json"
-
+const emailConfig = "email.json"
 const gdrive = "gdrive"
+
+var archiveName = ""
 
 type DirsToBackup struct {
 	Dirs []string `json:"dirs"`
@@ -48,9 +52,9 @@ var backupCmd = &cobra.Command{
 		}
 
 		if o {
-			archiveDir(arch)
+			archiveName = archiveDir(arch)
 		} else if m {
-			archiveDirs(arch)
+			archiveName = archiveDirs(arch)
 		} else {
 			log.Fatal("Single/multiple file mod not selected (use -o for single file or -m for multiple files listed in config)")
 		}
@@ -63,21 +67,27 @@ var backupCmd = &cobra.Command{
 		storages := make([]clouds.Uploader, 0)
 
 		if g {
-			storages = append(storages, clouds.NewGDrive(gConfig))
+			storages = append(storages, clouds.NewGDrive(filepath.Join(resources, gConfig)))
 		}
 
 		if y {
-			storages = append(storages, clouds.NewYaDisk(yaConfig))
+			storages = append(storages, clouds.NewYaDisk(filepath.Join(resources, yaConfig)))
 		}
 
 		if t {
-			fmt.Println("Tg works")
-			// storages = append(storages, telegram.NewTelegram(tgConfig))
+			t := telegram.NewTelegram(filepath.Join(resources, tgConfig))
+			fileId, err := t.UploadFile(archiveName)
+			if err != nil {
+				log.Printf("%v, new fileId(%s) not stored\n", err, fileId)
+			}
+			//TODO store new fileId
 		}
 
 		if e {
-			fmt.Println("Email works")
-			// storages = append(storages, email.NewMail(emailConfig))
+			e := email.NewMail(filepath.Join(resources, emailConfig))
+			if err := e.SendMsgWithAttachment(archiveName); err != nil {
+				log.Printf("email sending error, %v", err.Error())
+			}
 		}
 
 		//TODO сюда можно горутины! сделать бенчмарк
@@ -108,32 +118,37 @@ func init() {
 	backupCmd.MarkFlagRequired("archiver")
 }
 
-//TODO исп-ть type assertion или что-то такое чтобы определить тип архиватора и выполнить gzip для tar
-//Объединить неск архивов в один
 // Traverses a list of files from dirSrc and archives it
-func archiveDirs(arch archiver.ArchiverExtracter) {
+func archiveDirs(arch archiver.ArchiverExtracter) string {
 	f, err := os.Open(dirSrc)
-
 	if err != nil {
 		log.Fatal(err)
 	}
-	byteValue, err := ioutil.ReadAll(f)
 
+	byteValue, err := ioutil.ReadAll(f)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var dirs DirsToBackup
-	json.Unmarshal([]byte(byteValue), &dirs)
-
-	archiveDir := time.Now().Format("02.Jan.2006_15:04:05_backup")
-	for _, dir := range dirs.Dirs {
-		arch.Archive(dir, dstDir+"/"+archiveDir+"/")
+	if err := json.Unmarshal([]byte(byteValue), &dirs); err != nil {
+		log.Fatal(err)
 	}
+
+	tempDir, err := archiver.TempDir(dstDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := archiver.PackArchives(arch, dirs.Dirs, dstDir, tempDir); err != nil {
+		log.Fatal(err)
+	}
+	return tempDir + "." + archiverType
 }
 
-func archiveDir(arch archiver.ArchiverExtracter) {
+func archiveDir(arch archiver.ArchiverExtracter) string {
 	if err := arch.Archive(dirSrc, dstDir); err != nil {
 		log.Fatalf("error while single-file archive processed: %v", err)
 	}
+	return dstDir + "." + archiverType
 }
