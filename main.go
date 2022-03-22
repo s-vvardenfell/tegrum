@@ -1,47 +1,37 @@
 package main
 
-import "github.com/s-vvardenfell/Backuper/cmd"
+import "github.com/s-vvardenfell/tegrum/cmd"
 
 func main() {
 	cmd.Execute()
 
 	// os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
-
-	// t := &archiver.Zip{}
-	// someArchive(t)
-
-	// if err := t.Archive("resources/test_file_48kb.txt", "resources"); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// archiver.Gzip("resources/test_file_48kb.tar", "resources")
-
-	// if err := t.Extract("resources/test_file_48kb.tar.gz", "resources"); err != nil {
-	// 	log.Fatal(err)
-	// }
 }
 
 /*
 TODO
+в backup вообще не исп-ся archiveName, т.е. возвращаемое имя архива не нужно функции?
+мб исправить gzipping tar'ов - с этой переменной логика будет проще
+удалять архив .tar после того как создался .gz
 
 #Архивация
--общий код в tar и zip - рефакторинг
+-общий код в tar и zip - рефакторинг - мб можно объединить в 1 ф-ю
 -рефакторинг архивации - дб возвр значение мб - имя/путь сформированного архива
 -Пароль для архивов
 -сбор нескольких архивов в 1 для tar и zip (сейчас архивация неск-х архивов)
 
-На счет Uploader и Downloader интерфейсов - точно ли они должны возвращать значение? почему не ошибку? как используется это значение?
-мб нужно вызывать интерфейс Store который будет сохранять куда-то данные от Uploader
-UploadFile подумать чтобы возвращал ошибку, а не просто пустую строку как в telegram!
-должны ли вообще почта и тг следовать этим интерфейсам?
-
 #Общее
-Сообщения об успешной отправке/загрузке везде
+Сообщения об успешной отправке/загрузке везде + логи logrus
 Шифрование для smtp? Или хватит пароля на архив?
 Readme сделать, все нужные инструкции
-logrus
-работа как фоновый процесс?
-yandex реализация
+тесты для всех пакетов
+getTokenFromWeb и прочие возврат ошибки сделать?
+
+Clouds
+описание для функций
+реализация для яндекса
+тесты! - исп-ть fileIdByName и fileNameById для проверки появился ли файл
+
 
 
 dst + "/" + filename
@@ -50,9 +40,6 @@ dst + "/" + filename
 
 -переименовать в tegrum + команды
 -задачи из todo.txt сюда
-
-# Очистка
-tegrum clean //удалит архивы старше, чем опция
 
 # Получение
 tergum retrieve -g -y -t //скачивает последние бекап-архивы

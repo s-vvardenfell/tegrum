@@ -10,7 +10,7 @@ import (
 const resourceDir = "W:/Golang/src/Backuper/resources"
 const resultDir = "W:/Golang/src/Backuper/result"
 const configName = "telegram.json"
-const testFile = "test_file.txt"
+const testFile = "test_file_48kb.txt"
 
 func TestUploadDownload(t *testing.T) {
 

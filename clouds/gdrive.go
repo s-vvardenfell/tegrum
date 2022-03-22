@@ -3,12 +3,15 @@ package clouds
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
+	"github.com/gabriel-vasile/mimetype"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
@@ -17,6 +20,8 @@ import (
 
 // go get -u google.golang.org/api/drive/v3
 // go get -u golang.org/x/oauth2/google
+
+var ErrFileNotFound = errors.New("file not found")
 
 type GDrive struct {
 	Srv *drive.Service
@@ -46,77 +51,81 @@ func NewGDrive(credentials string) *GDrive {
 }
 
 // Download file by filename in directory dst
-// TODO CUT FILEPATH
-func (gd *GDrive) DownLoadFile(filename, dst string) {
-
-	if fileId := gd.fileIdByName(filename); filename != "" {
-		dst = dst + filename
+func (gd *GDrive) DownLoadFile(filename, dst string) error {
+	if fileId, err := gd.fileIdByName(filename); err == nil {
+		dst = filepath.Join(dst, filename)
 
 		f, err := gd.Srv.Files.Get(fileId).Download()
-
 		if err != nil {
-			log.Fatalf("Unable to download file: %v", err)
+			return fmt.Errorf("unable to download file: %v", err)
 		}
 
-		defer f.Body.Close()
-		respByte, err := ioutil.ReadAll(f.Body)
+		defer func() { _ = f.Body.Close() }()
 
+		respByte, err := ioutil.ReadAll(f.Body)
 		if err != nil {
-			log.Fatalf("Unable to read from file: %v", err)
+			return fmt.Errorf("unable to read from file: %v", err)
 		}
 
 		if err = os.WriteFile(dst, respByte, 0666); err != nil {
-			log.Fatalf("Unable to save data to file: %v", err)
+			return fmt.Errorf("unable to save data to file: %v", err)
 		}
 	} else {
-		log.Fatal("Cannot get file id by given name for downloading")
+		return fmt.Errorf("cannot get file id by given name for downloading")
 	}
+	return nil
 }
 
 // Uploads file to disk and returns its id if success
 // Deletes file with the same name
-func (gd *GDrive) UploadFile(filename string) string {
-	if id := gd.fileIdByName(filename); id != "" {
-		gd.deleteFile(id)
+func (gd *GDrive) UploadFile(filename string) (string, error) {
+	if id, err := gd.fileIdByName(filename); err == nil {
+		err = gd.deleteFile(id)
+		if err != nil {
+			return "", fmt.Errorf("cannot delete old file by id %s", filename)
+		}
+	} else {
+		return "", fmt.Errorf("cannot get file id by name %s", filename)
 	}
 
-	baseMimeType := "text/plain" //TODO сделать авто-определение mime type
+	baseMimeType, err := mimetype.DetectFile(filename)
+	if err != nil {
+		return "", fmt.Errorf("cannot detect mime type: %v", err)
+	}
 
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatalf("Unable to open file: %v", err)
+		return "", fmt.Errorf("unable to open file: %v", err)
 	}
 
 	fileInf, err := file.Stat()
 	if err != nil {
-		log.Fatalf("Unable get file's stats: %v", err)
+		return "", fmt.Errorf("unable get file's stats: %v", err)
 	}
 
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	f := &drive.File{Name: filename}
-	res, err := gd.Srv.Files. //TODO исп-ть не устаревший метод
+	res, err := gd.Srv.Files. //TODO use not deprecated
 					Create(f).
-					ResumableMedia(context.Background(), file, fileInf.Size(), baseMimeType). //TODO у имени файла убрать путь
+					ResumableMedia(context.Background(), file, fileInf.Size(), baseMimeType.String()).
 					ProgressUpdater(func(now, size int64) { fmt.Printf("%d, %d\r", now, size) }).
 					Do()
 
 	if err != nil {
-		log.Fatalf("Error while uploading file: %v", err)
+		return "", fmt.Errorf("error while uploading file: %v", err)
 	}
-	return res.Id
+	return res.Id, nil
 }
 
-func (gd *GDrive) ShowFilesList() {
+func (gd *GDrive) ShowFilesList() error {
 	r, err := gd.Srv.Files.List().PageSize(10).
 		Fields("nextPageToken, files(id, name)").Do()
-
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
+		return fmt.Errorf("unable to retrieve files: %v", err)
 	}
 
 	fmt.Println("Files:")
-
 	if len(r.Files) == 0 {
 		fmt.Println("No files found.")
 	} else {
@@ -124,57 +133,57 @@ func (gd *GDrive) ShowFilesList() {
 			fmt.Printf("%s (%s)\n", i.Name, i.Id)
 		}
 	}
+	return nil
 }
 
 // Delete file by given file id
-func (gd *GDrive) deleteFile(fileId string) {
+func (gd *GDrive) deleteFile(fileId string) error {
 	f := gd.Srv.Files.Delete(fileId)
 
 	if err := f.Do(); err != nil {
-		log.Fatalf("Error while deleting file: %v", err)
+		return fmt.Errorf("error while deleting file: %v", err)
 	}
+	return nil
 }
 
 // Returns file id if present or empty string if no such file found
-func (gd *GDrive) fileIdByName(filename string) string {
+func (gd *GDrive) fileIdByName(filename string) (string, error) {
 	r, err := gd.Srv.Files.List().PageSize(10).
 		Fields("nextPageToken, files(id, name)").Do()
-
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
+		return "", fmt.Errorf("unable to retrieve files: %v", err)
 	}
 
 	if len(r.Files) == 0 {
-		return ""
+		return "", ErrFileNotFound
 	} else {
 		for _, i := range r.Files {
 			if i.Name == filename {
-				return i.Id
+				return i.Id, nil
 			}
 		}
 	}
-	return ""
+	return "", ErrFileNotFound
 }
 
 // Returns filename if present or empty string if no such file found
-func (gd *GDrive) fileNameById(fileid string) string {
+func (gd *GDrive) fileNameById(fileid string) (string, error) {
 	r, err := gd.Srv.Files.List().PageSize(10).
 		Fields("nextPageToken, files(id, name)").Do()
-
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
+		return "", fmt.Errorf("unable to retrieve files: %v", err)
 	}
 
 	if len(r.Files) == 0 {
-		return ""
+		return "", ErrFileNotFound
 	} else {
 		for _, i := range r.Files {
 			if i.Id == fileid {
-				return i.Name
+				return i.Name, nil
 			}
 		}
 	}
-	return ""
+	return "", ErrFileNotFound
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -215,7 +224,7 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	tok := &oauth2.Token{}
 	err = json.NewDecoder(f).Decode(tok)
 	return tok, err
@@ -228,6 +237,6 @@ func saveToken(path string, token *oauth2.Token) {
 	if err != nil {
 		log.Fatalf("Unable to cache oauth token: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	json.NewEncoder(f).Encode(token)
 }

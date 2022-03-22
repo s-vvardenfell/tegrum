@@ -9,15 +9,15 @@ import (
 
 const resourceDir = "W:/Golang/src/Backuper/resources"
 const configName = "email.json"
-const attachFile = "test_file.txt"
+const attachFile = "test_file_48kb.txt"
 const subject = "testing email-pkg"
 const body = "test body msg"
 
-func TestSendMsgWithAttachment(t *testing.T) {
+func TestUploadFile(t *testing.T) {
 	e := NewMail(filepath.Join(resourceDir, configName))
 	t.Log("\tSending plain message with attachment")
 	{
-		err := e.SendMsgWithAttachment(filepath.Join(resourceDir, attachFile))
+		_, err := e.UploadFile(filepath.Join(resourceDir, attachFile))
 		require.NoError(t, err)
 	}
 }

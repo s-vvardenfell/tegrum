@@ -10,9 +10,10 @@ import (
 	"strings"
 
 	"github.com/s-vvardenfell/Backuper/archiver"
-	"github.com/s-vvardenfell/Backuper/clouds"
-	"github.com/s-vvardenfell/Backuper/email"
-	"github.com/s-vvardenfell/Backuper/telegram"
+	"github.com/s-vvardenfell/tegrum/clouds"
+	"github.com/s-vvardenfell/tegrum/email"
+	"github.com/s-vvardenfell/tegrum/telegram"
+	"github.com/s-vvardenfell/tegrum/types"
 	"github.com/spf13/cobra"
 )
 
@@ -22,14 +23,14 @@ var (
 	archiverType string
 )
 
-const resources = "W:/Golang/src/Backuper/resources"
+const resources = "W:/Golang/src/Backuper/resources" //TODO specify in common config, the same for other files locations
 const tgConfig = "telegram.json"
 const gConfig = "credentials.json"
 const yaConfig = ""
 const emailConfig = "email.json"
-const gdrive = "gdrive"
 
 var archiveName = ""
+var archToRemove = ""
 
 type DirsToBackup struct {
 	Dirs []string `json:"dirs"`
@@ -38,7 +39,7 @@ type DirsToBackup struct {
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backups files immediately to specified storages",
-	Long:  `long descr: backups files immediately`,
+	Long:  `long descr: backups files immediately`, //REMOVE
 	Run: func(cmd *cobra.Command, _ []string) {
 		o, _ := cmd.Flags().GetBool("one")
 		m, _ := cmd.Flags().GetBool("multiple")
@@ -49,49 +50,34 @@ var backupCmd = &cobra.Command{
 		} else if archiverType == "tar" {
 			arch = &archiver.Tar{}
 		} else {
-			log.Fatal("Wrong archiver type (zip and tar supported)")
+			log.Fatal("Wrong archiver type (<zip> and <tar>(will be .tar.gz) supported)")
 		}
 
 		if o {
-			archiveName = archiveDir(arch)
+			archiveDir(arch)
 		} else if m {
-			archiveName = archiveDirs(arch)
+			archiveDirs(arch)
 		} else {
 			log.Fatal("Single/multiple file mod not selected (use -o for single file or -m for multiple files listed in config)")
 		}
 
-		g, _ := cmd.Flags().GetBool("gdrive") //TODO обработка ошибок / const gdrive = "gdrive" - протестить
-		y, _ := cmd.Flags().GetBool("yadisk")
-		t, _ := cmd.Flags().GetBool("telegram")
-		e, _ := cmd.Flags().GetBool("email")
+		storages := make([]types.Uploader, 0)
 
-		storages := make([]clouds.Uploader, 0)
-
-		if g {
+		if g, err := cmd.Flags().GetBool("gdrive"); err == nil && g {
 			storages = append(storages, clouds.NewGDrive(filepath.Join(resources, gConfig)))
 		}
-
-		if y {
+		if y, err := cmd.Flags().GetBool("yadisk"); err == nil && y {
 			storages = append(storages, clouds.NewYaDisk(filepath.Join(resources, yaConfig)))
 		}
-
-		if t {
-			t := telegram.NewTelegram(filepath.Join(resources, tgConfig))
-			fileId, err := t.UploadFile(archiveName)
-			if err != nil {
-				log.Printf("%v, new fileId(%s) not stored\n", err, fileId)
-			}
-			//TODO store new fileId
+		if t, err := cmd.Flags().GetBool("telegram"); err == nil && t {
+			storages = append(storages, telegram.NewTelegram(filepath.Join(resources, tgConfig)))
 		}
-
-		if e {
-			e := email.NewMail(filepath.Join(resources, emailConfig))
-			if err := e.SendMsgWithAttachment(archiveName); err != nil {
-				log.Printf("email sending error, %v", err.Error())
-			}
+		if e, err := cmd.Flags().GetBool("email"); err == nil && e {
+			storages = append(storages, email.NewMail(filepath.Join(resources, emailConfig)))
 		}
 
 		//TODO сюда можно горутины! сделать бенчмарк
+		//TODO сохранять fileId в цикле, обрабатывать тут все ошибки, не дб фатала, тк другие способы отправки могут сработать, если 1 не сработал
 		for i := range storages {
 			// storages[i].UploadFile("resources/map.json.zip")
 			fmt.Printf("Загружаю в %T", storages[i])

@@ -1,8 +1,10 @@
-module github.com/s-vvardenfell/Backuper
+module github.com/s-vvardenfell/tegrum
 
 go 1.17
 
 require (
+	github.com/gabriel-vasile/mimetype v1.4.0
+	github.com/s-vvardenfell/Backuper v0.0.0-20220322102342-0bf794499cf2
 	github.com/spf13/cobra v1.4.0
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 	google.golang.org/api v0.71.0

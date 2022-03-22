@@ -15,6 +15,8 @@ import (
 	"github.com/s-vvardenfell/Backuper/utility"
 )
 
+const emailID = "email"
+
 type Email struct {
 	Sender   string   `json:"sender"`
 	User     string   `json:"user"`
@@ -43,11 +45,11 @@ func NewMail(cnfg string) *Email {
 }
 
 // Sends message with attachement with parameters, specified in config-file
-func (m *Email) SendMsgWithAttachment(filename string) error {
+func (m *Email) UploadFile(filename string) (string, error) {
 	data := m.buildMail(filename)
 	auth := smtp.PlainAuth("", m.User, m.Password, m.Host)
 	err := smtp.SendMail(m.Address, auth, m.Sender, m.To, data)
-	return err
+	return emailID, err
 }
 
 func (m *Email) buildMail(filename string) []byte {
