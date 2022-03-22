@@ -12,7 +12,7 @@ type ArchiverExtracter interface {
 }
 
 func TempDir(dst string) (string, error) {
-	archiveDir := time.Now().Format("02.Jan.2006_15-04-05")
+	archiveDir := time.Now().Format("02-Jan-2006_15-04-05")
 	p := filepath.Join(dst, archiveDir)
 	err := os.Mkdir(p, 0644)
 	if err != nil {

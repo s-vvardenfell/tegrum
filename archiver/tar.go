@@ -14,7 +14,7 @@ type Tar struct {
 
 func (t *Tar) Archive(source, target string) error {
 	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.tar", filename))
+	target = filepath.Join(target, fmt.Sprintf("%s.tar", strings.TrimSuffix(filename, filepath.Ext(filename))))
 	tarfile, err := os.Create(target)
 	if err != nil {
 		return err

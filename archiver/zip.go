@@ -14,7 +14,7 @@ type Zip struct {
 
 func (z *Zip) Archive(source, target string) error {
 	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.zip", filename))
+	target = filepath.Join(target, fmt.Sprintf("%s.zip", strings.TrimSuffix(filename, filepath.Ext(filename))))
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err

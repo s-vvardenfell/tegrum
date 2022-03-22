@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/Backuper/clouds"
@@ -17,7 +18,7 @@ import (
 
 var (
 	dirSrc       string
-	dstDir       string
+	dirDst       string
 	archiverType string
 )
 
@@ -111,7 +112,7 @@ func init() {
 	backupCmd.Flags().StringVarP(&dirSrc, "dirSrc", "s", "", "Config path")
 	backupCmd.MarkFlagRequired("dirSrc")
 
-	backupCmd.Flags().StringVarP(&dstDir, "dstDir", "d", "", "Result path")
+	backupCmd.Flags().StringVarP(&dirDst, "dstDir", "d", "", "Result path")
 	backupCmd.MarkFlagRequired("dstDir")
 
 	backupCmd.Flags().StringVarP(&archiverType, "archiver", "a", "", "Use zip / tar")
@@ -135,20 +136,41 @@ func archiveDirs(arch archiver.ArchiverExtracter) string {
 		log.Fatal(err)
 	}
 
-	tempDir, err := archiver.TempDir(dstDir)
+	tempDir, err := archiver.TempDir(dirDst)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := archiver.PackArchives(arch, dirs.Dirs, dstDir, tempDir); err != nil {
+	if err := archiver.PackArchives(arch, dirs.Dirs, dirDst, tempDir); err != nil {
 		log.Fatal(err)
+	}
+
+	//gzipping if tar selected
+	switch v := arch.(type) {
+	case *archiver.Tar:
+		archName := tempDir + "." + archiverType
+		if err := archiver.Gzip(archName, dirDst); err != nil {
+			log.Fatalf("error gziping file(%v), %v", err, v)
+		}
+		return archName + ".gz"
 	}
 	return tempDir + "." + archiverType
 }
 
 func archiveDir(arch archiver.ArchiverExtracter) string {
-	if err := arch.Archive(dirSrc, dstDir); err != nil {
+	if err := arch.Archive(dirSrc, dirDst); err != nil {
 		log.Fatalf("error while single-file archive processed: %v", err)
 	}
-	return dstDir + "." + archiverType
+
+	//gzipping if tar selected
+	switch v := arch.(type) {
+	case *archiver.Tar:
+		archName := strings.TrimSuffix(dirSrc, filepath.Ext(dirSrc)) + "." + archiverType
+		archName = filepath.Join(dirDst, filepath.Base(archName))
+		if err := archiver.Gzip(archName, dirDst); err != nil {
+			log.Fatalf("error gziping file(%v), %v", err, v)
+		}
+		return archName + ".gz"
+	}
+	return dirDst + "." + archiverType
 }
