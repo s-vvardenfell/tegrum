@@ -8,10 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/tegrum/clouds"
 	"github.com/s-vvardenfell/tegrum/email"
+	"github.com/s-vvardenfell/tegrum/storages"
 	"github.com/s-vvardenfell/tegrum/telegram"
 	"github.com/s-vvardenfell/tegrum/types"
 	"github.com/spf13/cobra"
@@ -23,11 +25,12 @@ var (
 	archiverType string
 )
 
-const resources = "W:/Golang/src/Backuper/resources" //TODO specify in common config, the same for other files locations
+const resources = "W:/Golang/src/Backuper/resources" //TODO specify in common config relative path, the same for other files locations
 const tgConfig = "telegram.json"
 const gConfig = "credentials.json"
 const yaConfig = ""
 const emailConfig = "email.json"
+const archivedDataFile = "W:/Golang/src/Backuper/result/data.csv"
 
 var archiveName = ""
 var archToRemove = ""
@@ -54,33 +57,46 @@ var backupCmd = &cobra.Command{
 		}
 
 		if o {
-			archiveDir(arch)
+			archiveName = archiveDir(arch)
 		} else if m {
-			archiveDirs(arch)
+			archiveName = archiveDirs(arch)
 		} else {
 			log.Fatal("Single/multiple file mod not selected (use -o for single file or -m for multiple files listed in config)")
 		}
 
-		storages := make([]types.Uploader, 0)
+		repositories := make([]types.Uploader, 0)
 
 		if g, err := cmd.Flags().GetBool("gdrive"); err == nil && g {
-			storages = append(storages, clouds.NewGDrive(filepath.Join(resources, gConfig)))
+			repositories = append(repositories, clouds.NewGDrive(filepath.Join(resources, gConfig)))
 		}
 		if y, err := cmd.Flags().GetBool("yadisk"); err == nil && y {
-			storages = append(storages, clouds.NewYaDisk(filepath.Join(resources, yaConfig)))
+			repositories = append(repositories, clouds.NewYaDisk(filepath.Join(resources, yaConfig)))
 		}
 		if t, err := cmd.Flags().GetBool("telegram"); err == nil && t {
-			storages = append(storages, telegram.NewTelegram(filepath.Join(resources, tgConfig)))
+			repositories = append(repositories, telegram.NewTelegram(filepath.Join(resources, tgConfig)))
 		}
 		if e, err := cmd.Flags().GetBool("email"); err == nil && e {
-			storages = append(storages, email.NewMail(filepath.Join(resources, emailConfig)))
+			repositories = append(repositories, email.NewMail(filepath.Join(resources, emailConfig)))
 		}
 
 		//TODO сюда можно горутины! сделать бенчмарк
 		//TODO сохранять fileId в цикле, обрабатывать тут все ошибки, не дб фатала, тк другие способы отправки могут сработать, если 1 не сработал
-		for i := range storages {
-			// storages[i].UploadFile("resources/map.json.zip")
-			fmt.Printf("Загружаю в %T", storages[i])
+
+		for _, rep := range repositories {
+
+			// fmt.Printf("Загружаю в %T", rep)
+			fileId, err := rep.UploadFile(archiveName)
+			if err != nil {
+				fmt.Printf("error occured while uploading archive to %T, %v", rep, err)
+				continue
+			}
+
+			repName := fmt.Sprintf("%T", rep)
+
+			if err := storeArchivedFileData(&storages.CsvStorage{}, fileId, repName[strings.Index(repName, ".")+1:]); err != nil {
+				fmt.Printf("error while storing file id %T, %v", rep, err)
+				continue
+			}
 		}
 	},
 }
@@ -159,4 +175,15 @@ func archiveDir(arch archiver.ArchiverExtracter) string {
 		return archName + ".gz"
 	}
 	return dirDst + "." + archiverType
+
+	//cannot remove .tar archive, error is "used by other process"
+}
+
+func storeArchivedFileData(s storages.Storage, fileId, repo string) error {
+	file, err := os.OpenFile(archivedDataFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to save to .csv file uploaded arhcive id, %v", err)
+	}
+	defer func() { _ = file.Close }()
+	return s.Store(file, []string{fileId, repo, time.Now().Format("01-02-2006_15:04:05")})
 }

@@ -10,9 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const resourceDir = "W:/Golang/src/Backuper/resources"
 const resultDir = "W:/Golang/src/Backuper/result"
-const configName = "telegram.json"
 const testFile = "test_data.csv"
 
 func TestStoreRetrieve(t *testing.T) {
