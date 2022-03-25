@@ -162,7 +162,7 @@ func downloadFileFromServer(url, dst string) error {
 }
 
 func doRequest(client *http.Client, method, url string, body io.Reader) []byte {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		log.Fatal(err)
 	}

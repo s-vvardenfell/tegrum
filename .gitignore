@@ -1,8 +1,8 @@
 resources/*.json
 resources/*.txt
-result/*.txt
-result/*.zip
-result/*.gz
-result/*.tar
+result/*.*
+result/*.*
+result/*.*
+result/*.*
 *.json
 todo.txt

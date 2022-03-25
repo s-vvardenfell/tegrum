@@ -1,11 +1,43 @@
 package main
 
-import "github.com/s-vvardenfell/tegrum/cmd"
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/s-vvardenfell/tegrum/storages"
+)
 
 func main() {
-	cmd.Execute()
+	// cmd.Execute()
 
 	// os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
+
+	file, err := os.OpenFile("result/data.csv", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := []string{"some", "data", "tostore"}
+	st := storages.CsvStorage{}
+
+	err = st.Store(file, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Close()
+
+	file, err = os.OpenFile("result/data.csv", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res, err := st.Retrieve(file, "some")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(res)
+	file.Close()
 }
 
 /*
