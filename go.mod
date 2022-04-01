@@ -1,6 +1,6 @@
 module github.com/s-vvardenfell/tegrum
 
-go 1.17
+go 1.18
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.0

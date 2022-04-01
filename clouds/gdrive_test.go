@@ -42,7 +42,7 @@ func TestUploadDownload(t *testing.T) {
 	{
 		tempName, err := gd.fileIdByName(fileName)
 		require.NoError(t, err)
-		require.EqualValues(t, fileName, tempName) //сравниваю имя файла которое получил ранее с тем что получил здесь
+		require.EqualValues(t, fileName, tempName)
 	}
 
 	t.Log("\tDeleting temporary file by file id from Google Drive")
@@ -53,6 +53,7 @@ func TestUploadDownload(t *testing.T) {
 
 	t.Log("\tChecking file was really removed from Google Drive")
 	{
-		//попытаться загрузить файл, ошибка должна быть
+		err = gd.DownLoadFile(fileId, dstDir)
+		require.Error(t, err)
 	}
 }

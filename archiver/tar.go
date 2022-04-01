@@ -2,6 +2,7 @@ package archiver
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
@@ -14,14 +15,17 @@ type Tar struct {
 
 func (t *Tar) Archive(source, target string) error {
 	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.tar", strings.TrimSuffix(filename, filepath.Ext(filename))))
+	target = filepath.Join(target, fmt.Sprintf("%s.tar.gz", strings.TrimSuffix(filename, filepath.Ext(filename))))
 	tarfile, err := os.Create(target)
 	if err != nil {
 		return err
 	}
 	defer tarfile.Close()
 
-	tarball := tar.NewWriter(tarfile)
+	gzw := gzip.NewWriter(tarfile)
+	defer gzw.Close()
+
+	tarball := tar.NewWriter(gzw)
 	defer tarball.Close()
 
 	info, err := os.Stat(source)
