@@ -13,9 +13,8 @@ import (
 	"github.com/s-vvardenfell/Backuper/archiver"
 	"github.com/s-vvardenfell/tegrum/clouds"
 	"github.com/s-vvardenfell/tegrum/email"
-	"github.com/s-vvardenfell/tegrum/storages"
+	"github.com/s-vvardenfell/tegrum/records/csv_record"
 	"github.com/s-vvardenfell/tegrum/telegram"
-	"github.com/s-vvardenfell/tegrum/types"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +41,7 @@ type DirsToBackup struct {
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backups files immediately to specified storages",
-	Long:  `long descr: backups files immediately`, //REMOVE
+	Long:  `long descr: backups files immediately`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		o, _ := cmd.Flags().GetBool("one")
 		m, _ := cmd.Flags().GetBool("multiple")
@@ -64,7 +63,7 @@ var backupCmd = &cobra.Command{
 			log.Fatal("Single/multiple file mod not selected (use -o for single file or -m for multiple files listed in config)")
 		}
 
-		repositories := make([]types.Uploader, 0)
+		repositories := make([]Uploader, 0)
 
 		if g, err := cmd.Flags().GetBool("gdrive"); err == nil && g {
 			repositories = append(repositories, clouds.NewGDrive(filepath.Join(resources, gConfig)))
@@ -93,7 +92,7 @@ var backupCmd = &cobra.Command{
 
 			repName := fmt.Sprintf("%T", rep)
 
-			if err := storeArchivedFileData(&storages.CsvStorage{}, fileId, repName[strings.Index(repName, ".")+1:]); err != nil {
+			if err := storeArchivedFileData(&csv_record.CsvStorage{}, fileId, repName[strings.Index(repName, ".")+1:]); err != nil {
 				fmt.Printf("error while storing file id %T, %v", rep, err)
 				continue
 			}
@@ -179,11 +178,11 @@ func archiveDir(arch archiver.ArchiverExtracter) string {
 	//cannot remove .tar archive, error is "used by other process"
 }
 
-func storeArchivedFileData(s storages.Storage, fileId, repo string) error {
+func storeArchivedFileData(r Record, fileId, repo string) error {
 	file, err := os.OpenFile(archivedDataFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to save to .csv file uploaded arhcive id, %v", err)
 	}
 	defer func() { _ = file.Close }()
-	return s.Store(file, []string{fileId, repo, time.Now().Format("01-02-2006_15:04:05")})
+	return r.Store(file, []string{fileId, repo, time.Now().Format("01-02-2006_15:04:05")})
 }

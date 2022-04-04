@@ -1,4 +1,4 @@
-package archiver
+package zipping
 
 import (
 	"archive/zip"
@@ -12,12 +12,12 @@ import (
 type Zip struct {
 }
 
-func (z *Zip) Archive(source, target string) error {
+func (z *Zip) Archive(source, target string) (string, error) {
 	filename := filepath.Base(source)
 	target = filepath.Join(target, fmt.Sprintf("%s.zip", strings.TrimSuffix(filename, filepath.Ext(filename))))
 	zipfile, err := os.Create(target)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer zipfile.Close()
 
@@ -26,7 +26,7 @@ func (z *Zip) Archive(source, target string) error {
 
 	info, err := os.Stat(source)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var baseDir string
@@ -34,7 +34,7 @@ func (z *Zip) Archive(source, target string) error {
 		baseDir = filepath.Base(source)
 	}
 
-	filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	return target, filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,6 @@ func (z *Zip) Archive(source, target string) error {
 		_, err = io.Copy(writer, file)
 		return err
 	})
-	return err
 }
 
 func (z *Zip) Extract(archive, target string) error {

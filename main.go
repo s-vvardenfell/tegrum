@@ -1,10 +1,9 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 	"strconv"
-
-	"github.com/s-vvardenfell/tegrum/archiver"
 )
 
 const source = "W:/Golang/src/Backuper/resources/test_file_20kb.txt"
@@ -25,10 +24,12 @@ func GenerateWords(btns []string) [][]string {
 
 func main() {
 
-	t := archiver.Tar{}
-	if err := t.Archive(source, target); err != nil {
-		log.Fatal(err)
-	}
+	// t := archiver.Tar{}
+	// if err := t.Archive(source, target); err != nil {
+	// 	log.Fatal(err)
+	// }
+	res, _ := os.Getwd()
+	fmt.Println(res)
 
 	// cmd.Execute()
 
@@ -69,12 +70,15 @@ func main() {
 
 /*
 TODO
-проблема с именоанием - storage и repositories, archives etc
+переписать backup.go
+проблема с именованием - storage и repositories, archives etc - record все еще не очень нравится название
+исправить все тесты - генерация тест-файла, os.GetWd для пути
+перенести zip и tar в разные пакеты внутри archiver, исправить путь до temp
 
 #Архивация
--общий код в tar и zip - рефакторинг - можно объединить в 1 ф-ю; сделать gzip внутри tar
 -рефакторинг архивации - дб возвр значение мб - имя/путь сформированного архива
--сбор нескольких архивов в 1 для tar и zip (сейчас архивация неск-х архивов)
+-тесты для архиваторов
+-добавление неск файлов в 1 архив, не создавать папки-пути: в итоговом архиве дб только файлы(?)
 
 #Общее
 Сообщения об успешной отправке/загрузке везде + логи logrus

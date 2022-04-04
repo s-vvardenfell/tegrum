@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const resourceDir = "W:/Golang/src/Backuper/resources"
+const resourceDir = "W:/Golang/src/Backuper/resources" //TODO FIX THIS - НЕ БУДЕТ РАБОТАТЬ НА ДРУГОМ КОМПЕ
 const configName = "email.json"
-const attachFile = "test_file_48kb.txt"
+const attachFile = "test_file_48kb.txt" //должен генерироваться
 const subject = "testing email-pkg"
 const body = "test body msg"
 

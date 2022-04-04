@@ -1,4 +1,4 @@
-package storages
+package csv_record
 
 import (
 	"encoding/csv"

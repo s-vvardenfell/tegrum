@@ -13,12 +13,12 @@ import (
 type Tar struct {
 }
 
-func (t *Tar) Archive(source, target string) error {
+func (t *Tar) Archive(source, target string) (string, error) {
 	filename := filepath.Base(source)
 	target = filepath.Join(target, fmt.Sprintf("%s.tar.gz", strings.TrimSuffix(filename, filepath.Ext(filename))))
 	tarfile, err := os.Create(target)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer tarfile.Close()
 
@@ -30,7 +30,7 @@ func (t *Tar) Archive(source, target string) error {
 
 	info, err := os.Stat(source)
 	if err != nil {
-		return nil
+		return "", err
 	}
 
 	var baseDir string
@@ -38,7 +38,7 @@ func (t *Tar) Archive(source, target string) error {
 		baseDir = filepath.Base(source)
 	}
 
-	return filepath.Walk(source,
+	return target, filepath.Walk(source,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -76,7 +76,12 @@ func (t *Tar) Extract(tarball, target string) error {
 		return err
 	}
 	defer reader.Close()
-	tarReader := tar.NewReader(reader)
+	// tarReader := tar.NewReader(reader)
+
+	gzw, _ := gzip.NewReader(reader)
+	defer gzw.Close()
+
+	tarReader := tar.NewReader(gzw)
 
 	for {
 		header, err := tarReader.Next()

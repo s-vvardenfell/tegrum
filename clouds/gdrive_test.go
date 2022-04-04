@@ -8,7 +8,7 @@ import (
 )
 
 const credentials = ""
-const fileToUpload = ""
+const fileToUpload = "" //должен генерироваться
 const dstDir = ""
 
 func TestUploadDownload(t *testing.T) {

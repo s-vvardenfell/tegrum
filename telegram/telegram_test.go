@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const resourceDir = "W:/Golang/src/Backuper/resources"
+const resourceDir = "W:/Golang/src/Backuper/resources" //TODO FIX THIS - НЕ БУДЕТ РАБОТАТЬ НА ДРУГОМ КОМПЕ
 const resultDir = "W:/Golang/src/Backuper/result"
 const configName = "telegram.json"
-const testFile = "test_file_48kb.txt"
+const testFile = "test_file_48kb.txt" //должен генерироваться
 
 func TestUploadDownload(t *testing.T) {
 
