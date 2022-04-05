@@ -1,4 +1,4 @@
-package taring
+package tarring
 
 import (
 	"testing"
