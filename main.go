@@ -1,39 +1,15 @@
 package main
 
-import (
-	"fmt"
-	"os"
-	"strconv"
-)
+import "github.com/s-vvardenfell/tegrum/cmd"
 
 const source = "W:/Golang/src/Backuper/resources/test_file_20kb.txt"
 const target = "W:/Golang/src/Backuper/result/"
 
-func GenerateWords(btns []string) [][]string {
-	cnt := len(btns) * len(btns)
-	words := make([][]string, cnt)
-	// var temp string
-	for j := 0; j < len(btns); j++ {
-		for i := range words {
-			words[i] = append(words[i], strconv.Itoa(i))
-		}
-	}
-
-	return words
-}
-
 func main() {
 
-	// t := archiver.Tar{}
-	// if err := t.Archive(source, target); err != nil {
-	// 	log.Fatal(err)
-	// }
-	res, _ := os.Getwd()
-	fmt.Println(res)
+	cmd.Execute()
 
-	// cmd.Execute()
-
-	os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
+	// os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
 
 	// file, err := os.OpenFile(writer, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 	// if err != nil {
@@ -85,6 +61,7 @@ TODO
 Readme сделать, все нужные инструкции
 тесты для всех пакетов
 getTokenFromWeb и прочие возврат ошибки сделать?
+LOGRUS везде
 
 Clouds
 описание для функций

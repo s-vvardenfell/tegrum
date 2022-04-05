@@ -6,8 +6,11 @@ import (
 	"time"
 )
 
-type ArchiverExtracter interface {
-	Archive(source, target string) error
+type Archiver interface {
+	Archive(source, target string) (string, error)
+}
+
+type Extracter interface {
 	Extract(archive, target string) error
 }
 
@@ -21,19 +24,19 @@ func TempDir(dst string) (string, error) {
 	return p, nil
 }
 
-func PackArchives(a ArchiverExtracter, dirList []string, dst, target string) error {
-	for _, dir := range dirList {
-		if err := a.Archive(dir, target); err != nil {
-			return err
-		}
-	}
+// func PackArchives(a Archiver, dirList []string, dst, target string) error {
+// 	for _, dir := range dirList {
+// 		if err := a.Archive(dir, target); err != nil {
+// 			return err
+// 		}
+// 	}
 
-	if err := a.Archive(target, dst); err != nil {
-		return err
-	}
+// 	if err := a.Archive(target, dst); err != nil {
+// 		return err
+// 	}
 
-	if err := os.RemoveAll(target); err != nil {
-		return err
-	}
-	return nil
-}
+// 	if err := os.RemoveAll(target); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }

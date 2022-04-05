@@ -1,4 +1,4 @@
-package archiver
+package taring
 
 import (
 	"archive/tar"

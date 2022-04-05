@@ -9,7 +9,7 @@ import (
 
 var retrieveCmd = &cobra.Command{
 	Use:   "retrieve",
-	Short: "Backups files immediately to specified storages",
+	Short: "Gets backup archives stored earlier from specified storages",
 	Long:  `long descr: backups files immediately`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		g, _ := cmd.Flags().GetBool("gdrive")
@@ -40,7 +40,7 @@ var retrieveCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(retrieveCmd)
-	retrieveCmd.Flags().BoolP("gdrive", "g", false, "Download backup archive from Google Drive")
-	retrieveCmd.Flags().BoolP("yadisk", "y", false, "Download backup archive from Yandex Disk")
-	retrieveCmd.Flags().BoolP("telegram", "t", false, "Download backup archive from Telegram chat/channel")
+	retrieveCmd.Flags().BoolP("gdrive", "g", false, "Download last backup archive from Google Drive")
+	retrieveCmd.Flags().BoolP("yadisk", "y", false, "Download last backup archive from Yandex Disk")
+	retrieveCmd.Flags().BoolP("telegram", "t", false, "Download last backup archive from Telegram")
 }
