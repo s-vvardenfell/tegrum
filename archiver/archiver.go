@@ -4,9 +4,12 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/s-vvardenfell/tegrum/cmd"
 )
+
+type ArchiverExtracter interface {
+	Archive(source, target string) error
+	Extract(archive, target string) error
+}
 
 func TempDir(dst string) (string, error) {
 	archiveDir := time.Now().Format("02-01-2006_15-04-05")
@@ -18,7 +21,7 @@ func TempDir(dst string) (string, error) {
 	return p, nil
 }
 
-func PackArchives(a cmd.ArchiverExtracter, dirList []string, dst, target string) error {
+func PackArchives(a ArchiverExtracter, dirList []string, dst, target string) error {
 	for _, dir := range dirList {
 		if err := a.Archive(dir, target); err != nil {
 			return err

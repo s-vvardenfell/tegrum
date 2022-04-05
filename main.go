@@ -33,7 +33,7 @@ func main() {
 
 	// cmd.Execute()
 
-	// os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
+	os.Setenv("HTTPS_PROXY", "http://127.0.0.1:8888")
 
 	// file, err := os.OpenFile(writer, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 	// if err != nil {
@@ -73,7 +73,6 @@ TODO
 переписать backup.go
 проблема с именованием - storage и repositories, archives etc - record все еще не очень нравится название
 исправить все тесты - генерация тест-файла, os.GetWd для пути
-перенести zip и tar в разные пакеты внутри archiver, исправить путь до temp
 
 #Архивация
 -рефакторинг архивации - дб возвр значение мб - имя/путь сформированного архива

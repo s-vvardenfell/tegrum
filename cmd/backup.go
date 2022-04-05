@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/s-vvardenfell/Backuper/archiver"
-	"github.com/s-vvardenfell/tegrum/clouds"
+	"github.com/s-vvardenfell/tegrum/archiver"
+	"github.com/s-vvardenfell/tegrum/clouds" //ya and goo moved to their own dirs/pkgs
 	"github.com/s-vvardenfell/tegrum/email"
 	"github.com/s-vvardenfell/tegrum/records/csv_record"
 	"github.com/s-vvardenfell/tegrum/telegram"

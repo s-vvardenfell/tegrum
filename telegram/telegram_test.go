@@ -4,23 +4,23 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/s-vvardenfell/tegrum/utility"
 	"github.com/stretchr/testify/require"
 )
 
-const resourceDir = "W:/Golang/src/Backuper/resources" //TODO FIX THIS - НЕ БУДЕТ РАБОТАТЬ НА ДРУГОМ КОМПЕ
-const resultDir = "W:/Golang/src/Backuper/result"
 const configName = "telegram.json"
-const testFile = "test_file_48kb.txt" //должен генерироваться
+const isNestedPkg = false
 
 func TestUploadDownload(t *testing.T) {
+	tempDir, resourceDir, tempFileName, err := utility.PrepareForTest(isNestedPkg)
+	require.NoError(t, err)
 
 	tg := NewTelegram(filepath.Join(resourceDir, configName))
 	var fileId string
-	var err error
 
 	t.Log("\tUploading file to telegramm chat")
 	{
-		fileId, err = tg.UploadFile(filepath.Join(resourceDir, testFile))
+		fileId, err = tg.UploadFile(tempFileName)
 		require.NoError(t, err)
 		require.True(t, (fileId != ""))
 	}
@@ -31,8 +31,8 @@ func TestUploadDownload(t *testing.T) {
 		require.True(t, (url != ""))
 		require.NoError(t, err)
 
-		err = downloadFileFromServer(url, resultDir)
+		err = downloadFileFromServer(url, tempDir)
 		require.NoError(t, err)
-		require.FileExists(t, filepath.Join(resultDir, filepath.Base(url)))
+		require.FileExists(t, filepath.Join(tempDir, filepath.Base(url)))
 	}
 }

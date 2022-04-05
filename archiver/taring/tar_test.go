@@ -1,26 +1,18 @@
 package archiver
 
 import (
-	"os"
-	"path/filepath"
-	"strconv"
 	"testing"
-	"time"
 
+	"github.com/s-vvardenfell/tegrum/utility"
 	"github.com/stretchr/testify/require"
 )
 
+const isNestedPkg = true
+
 func TestTarUnTar(t *testing.T) {
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	tempDir := filepath.Join(filepath.Join(filepath.Dir(wd), "../"), "temp")
-
 	tar := Tar{}
-	tempFileName := filepath.Join(tempDir, time.Now().Format("02-01-2006_15-04-05")+".txt")
-	tempFileContent := strconv.Itoa(int(time.Now().Unix()))
 	var archiveLocation string
-
-	err = os.WriteFile(tempFileName, []byte(tempFileContent), 0666)
+	tempDir, _, tempFileName, err := utility.PrepareForTest(isNestedPkg)
 	require.NoError(t, err)
 
 	t.Log("\tTaring/gzipping file")

@@ -1,4 +1,4 @@
-package clouds
+package gdrive
 
 import (
 	"path/filepath"
@@ -10,6 +10,11 @@ import (
 const credentials = ""
 const fileToUpload = "" //должен генерироваться
 const dstDir = ""
+
+//TODO
+// const isNestedPkg = true
+// tempDir, _, tempFileName, err := utility.PrepareForTest(isNestedPkg)
+// require.NoError(t, err)
 
 func TestUploadDownload(t *testing.T) {
 	gd := NewGDrive(credentials)
