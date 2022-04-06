@@ -14,3 +14,7 @@ type Record interface {
 	Store(w io.Writer, data []string) error
 	Retrieve(r io.Reader, index string) ([]string, error)
 }
+
+type DirsToBackup struct {
+	Dirs []string `json:"dirs"`
+}

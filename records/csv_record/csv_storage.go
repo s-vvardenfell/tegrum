@@ -6,10 +6,10 @@ import (
 	"io"
 )
 
-type CsvStorage struct {
+type CsvRecorderRetriever struct {
 }
 
-func (s *CsvStorage) Store(w io.Writer, data []string) error {
+func (s *CsvRecorderRetriever) Record(w io.Writer, data []string) error {
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
 	if err := writer.Write(data); err != nil {
@@ -18,7 +18,7 @@ func (s *CsvStorage) Store(w io.Writer, data []string) error {
 	return nil
 }
 
-func (s *CsvStorage) Retrieve(r io.Reader, index string) ([]string, error) {
+func (s *CsvRecorderRetriever) Retrieve(r io.Reader, index string) ([]string, error) {
 	reader := csv.NewReader(r)
 	reader.FieldsPerRecord = 3
 	reader.Comment = '#'

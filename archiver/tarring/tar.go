@@ -10,12 +10,23 @@ import (
 	"strings"
 )
 
+const ext = "tar.gz"
+
 type Tar struct {
+	extension string
+}
+
+func NewTar() *Tar {
+	return &Tar{ext}
+}
+
+func (t *Tar) Extension() string {
+	return t.extension
 }
 
 func (t *Tar) Archive(source, target string) (string, error) {
 	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.tar.gz", strings.TrimSuffix(filename, filepath.Ext(filename))))
+	target = filepath.Join(target, fmt.Sprintf("%s.%s", strings.TrimSuffix(filename, filepath.Ext(filename)), t.Extension()))
 	tarfile, err := os.Create(target)
 	if err != nil {
 		return "", err

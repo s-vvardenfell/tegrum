@@ -13,7 +13,7 @@ import (
 const testFile = "test_data.csv"
 
 func TestStoreRetrieve(t *testing.T) {
-	st := CsvStorage{}
+	st := CsvRecorderRetriever{}
 	test_data := strconv.FormatInt(time.Now().Unix(), 10)   //generate data for slice
 	test_slice := []string{test_data, test_data, test_data} //data to write
 
@@ -27,7 +27,7 @@ func TestStoreRetrieve(t *testing.T) {
 		require.NoError(t, err)
 		defer func() { _ = file.Close }()
 
-		err = st.Store(file, test_slice)
+		err = st.Record(file, test_slice)
 		require.NoError(t, err)
 	}
 

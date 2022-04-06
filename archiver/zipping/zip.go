@@ -9,12 +9,23 @@ import (
 	"strings"
 )
 
+const ext = "zip"
+
 type Zip struct {
+	extension string
+}
+
+func NewZip() *Zip {
+	return &Zip{ext}
+}
+
+func (z *Zip) Extension() string {
+	return z.extension
 }
 
 func (z *Zip) Archive(source, target string) (string, error) {
 	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.zip", strings.TrimSuffix(filename, filepath.Ext(filename))))
+	target = filepath.Join(target, fmt.Sprintf("%s.%s", strings.TrimSuffix(filename, filepath.Ext(filename)), z.Extension()))
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return "", err

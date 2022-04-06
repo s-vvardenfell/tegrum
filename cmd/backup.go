@@ -122,7 +122,7 @@ package cmd
 // 	backupCmd.MarkFlagRequired("archiver")
 // }
 
-// // Traverses a list of files from dirSrc and archives it
+// Traverses a list of files from dirSrc and archives it
 // func archiveDirs(arch archiver.ArchiverExtracter) string {
 // 	f, err := os.Open(dirSrc)
 // 	if err != nil {

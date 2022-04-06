@@ -7,11 +7,13 @@ import (
 )
 
 type Archiver interface {
-	Archive(source, target string) (string, error)
+	Archive(source, dst string) (string, error)
+	Extension() string
 }
 
 type Extracter interface {
-	Extract(archive, target string) error
+	Extract(archive, dst string) error
+	Extension() string
 }
 
 func TempDir(dst string) (string, error) {
@@ -24,6 +26,7 @@ func TempDir(dst string) (string, error) {
 	return p, nil
 }
 
+// arch, dirs.Dirs, dirDst, tempDir
 // func PackArchives(a Archiver, dirList []string, dst, target string) error {
 // 	for _, dir := range dirList {
 // 		if err := a.Archive(dir, target); err != nil {
