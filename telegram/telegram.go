@@ -46,7 +46,7 @@ func (t *Telegram) Extension() string {
 
 // Downloads a file from a telegram chat using a chat-bot
 // specified in the configuration
-// NOTE: files larger than 20 MB may not be downloaded because of API specification
+// NOTE: files larger than 20 MB may not be downloaded because of API restrictions
 func (t *Telegram) DownLoadFile(fileId, dst string) error {
 	url, err := fileLocationFromServer(t.Token, fileId)
 	if err != nil {

@@ -22,7 +22,7 @@ To specify source and destination dirs<br>
 `-s` for source (file or list of files to archive and upload)<br>
 `-d` for destination (dir where the archive will appear)<br>
 
-Storage can be used:<br>
+Storages can be used:<br>
 `-g` Google Drive<br>
 `-y` Yandex Disk (not implemented yet)<br>
 `-t` Telegram<br>
@@ -45,7 +45,7 @@ If no recorder specified, no data will be read, an error<br>
 To specify destination dir<br>
 `-d` for destination (dir where the archive will appear)<br>
 
-Storage can be used:<br>
+Storages can be used:<br>
 `-g` Google Drive<br>
 `-y` Yandex Disk (not implemented yet)<br>
 `-t` Telegram<br>

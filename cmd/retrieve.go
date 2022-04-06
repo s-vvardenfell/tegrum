@@ -17,7 +17,6 @@ import (
 var retrieveCmd = &cobra.Command{
 	Use:   "retrieve",
 	Short: "Gets backup archives stored earlier from specified storages",
-	Long:  `long descr: backups files immediately`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		//select storage type
 		//if not specified, error
@@ -94,6 +93,7 @@ func fileIdByExt(rr RecorderRetriever, ext string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("%v, %v", v, err)
 		}
+		defer func() { _ = file.Close() }()
 
 		results, err := rr.Retrieve(file, ext)
 		if err != nil {

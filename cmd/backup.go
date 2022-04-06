@@ -54,7 +54,6 @@ const ( //TODO refactor names
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backups files immediately to specified storages",
-	Long:  `long descr: backups files immediately`, //TODO examples
 	Run: func(cmd *cobra.Command, _ []string) {
 
 		// select archiver type (tar/zip)
@@ -216,7 +215,7 @@ func archiveDirs(arch Archiver, srcDir, dstDir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
+	defer func() { _ = f.Close() }()
 	byteValue, err := ioutil.ReadAll(f)
 	if err != nil {
 		return "", err
@@ -255,7 +254,7 @@ func storeUploadedFilesValues(rr RecorderRetriever, fileId, storageName string) 
 		if err != nil {
 			return err
 		}
-
+		defer func() { _ = file.Close() }()
 		//possible refactor: RecorderRetriever classes method Record() should open it Writers himself
 		data := []string{fileId, storageName, time.Now().Format("01.02.2006 15:04:05")}
 		if err := rr.Record(file, data); err != nil {
