@@ -15,7 +15,6 @@ import (
 	"github.com/s-vvardenfell/tegrum/clouds/gdrive"
 	"github.com/s-vvardenfell/tegrum/clouds/yadisk"
 	"github.com/s-vvardenfell/tegrum/email"
-	"github.com/s-vvardenfell/tegrum/records"
 	"github.com/s-vvardenfell/tegrum/records/csv_record"
 	"github.com/s-vvardenfell/tegrum/telegram"
 	"github.com/spf13/cobra"
@@ -81,7 +80,7 @@ var backupCmd = &cobra.Command{
 
 		//select storage type
 		//if not specified, not store
-		var rr records.RecorderRetriever
+		var rr RecorderRetriever
 		csvFlag, err := cmd.Flags().GetBool(csv)
 		if err != nil {
 			log.Fatal(err)
@@ -249,7 +248,7 @@ func archiveDirs(arch Archiver, srcDir, dstDir string) (string, error) {
 	return tempDir + fmt.Sprintf(".%s", arch.Extension()), nil
 }
 
-func storeUploadedFilesValues(rr records.RecorderRetriever, fileId, storageName string) error {
+func storeUploadedFilesValues(rr RecorderRetriever, fileId, storageName string) error {
 	//TODO TYPE SWITCH
 	if _, ok := rr.(*csv_record.CsvRecorderRetriever); ok {
 		file, err := os.OpenFile(csvDataFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)

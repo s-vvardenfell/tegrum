@@ -9,7 +9,6 @@ import (
 
 	"github.com/s-vvardenfell/tegrum/clouds/gdrive"
 	"github.com/s-vvardenfell/tegrum/clouds/yadisk"
-	"github.com/s-vvardenfell/tegrum/records"
 	"github.com/s-vvardenfell/tegrum/records/csv_record"
 	"github.com/s-vvardenfell/tegrum/telegram"
 	"github.com/spf13/cobra"
@@ -22,7 +21,7 @@ var retrieveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, _ []string) {
 		//select storage type
 		//if not specified, error
-		var rr records.RecorderRetriever
+		var rr RecorderRetriever
 		csvFlag, err := cmd.Flags().GetBool(csv)
 		if err != nil {
 			log.Fatal(err)
@@ -88,7 +87,7 @@ func init() {
 	retrieveCmd.Flags().Bool(csv, false, "Use csv-file to read uploaded archives data")
 }
 
-func fileIdByExt(rr records.RecorderRetriever, ext string) (string, error) {
+func fileIdByExt(rr RecorderRetriever, ext string) (string, error) {
 	switch v := rr.(type) {
 	case *csv_record.CsvRecorderRetriever:
 		file, err := os.Open(csvDataFile)

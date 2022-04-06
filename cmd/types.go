@@ -1,5 +1,7 @@
 package cmd
 
+import "io"
+
 type Extensioner interface {
 	Extension() string
 }
@@ -22,6 +24,11 @@ type Archiver interface {
 type Extracter interface {
 	Extensioner
 	Extract(archive, dst string) error
+}
+
+type RecorderRetriever interface {
+	Record(w io.Writer, data []string) error
+	Retrieve(r io.Reader, index string) ([]string, error)
 }
 
 type DirsToBackup struct {
