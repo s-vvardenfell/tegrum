@@ -23,8 +23,11 @@ import (
 
 var ErrFileNotFound = errors.New("file not found")
 
+const ext = "gdrive"
+
 type GDrive struct {
-	Srv *drive.Service
+	Srv       *drive.Service
+	extension string
 }
 
 func NewGDrive(credentials string) *GDrive {
@@ -47,7 +50,11 @@ func NewGDrive(credentials string) *GDrive {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
-	return &GDrive{Srv: srv}
+	return &GDrive{Srv: srv, extension: ext}
+}
+
+func (gd *GDrive) Extension() string {
+	return gd.extension
 }
 
 // Download file by filename in directory dst

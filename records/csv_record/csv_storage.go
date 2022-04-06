@@ -23,16 +23,24 @@ func (s *CsvRecorderRetriever) Retrieve(r io.Reader, index string) ([]string, er
 	reader.FieldsPerRecord = 3
 	reader.Comment = '#'
 
+	records := make([][]string, 0)
 	for {
 		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			return nil, fmt.Errorf("error while fetching records, %v", err)
 		}
+		records = append(records, record)
+	}
 
-		for _, r := range record {
+	for i := len(records) - 1; i >= 0; i-- {
+		for _, r := range records[i] {
 			if r == index {
-				return record, nil
+				return records[i], nil
 			}
 		}
 	}
+	return nil, fmt.Errorf("record with index %s not found\n", index)
 }

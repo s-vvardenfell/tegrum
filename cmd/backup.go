@@ -1,190 +1,277 @@
 package cmd
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"io/ioutil"
-// 	"log"
-// 	"os"
-// 	"path/filepath"
-// 	"strings"
-// 	"time"
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
-// 	"github.com/s-vvardenfell/tegrum/archiver"
-// 	"github.com/s-vvardenfell/tegrum/clouds" //ya and goo moved to their own dirs/pkgs
-// 	"github.com/s-vvardenfell/tegrum/email"
-// 	"github.com/s-vvardenfell/tegrum/records/csv_record"
-// 	"github.com/s-vvardenfell/tegrum/telegram"
-// 	"github.com/spf13/cobra"
-// )
+	"github.com/s-vvardenfell/tegrum/archiver/tarring"
+	"github.com/s-vvardenfell/tegrum/archiver/zipping"
+	"github.com/s-vvardenfell/tegrum/clouds/gdrive"
+	"github.com/s-vvardenfell/tegrum/clouds/yadisk"
+	"github.com/s-vvardenfell/tegrum/email"
+	"github.com/s-vvardenfell/tegrum/records"
+	"github.com/s-vvardenfell/tegrum/records/csv_record"
+	"github.com/s-vvardenfell/tegrum/telegram"
+	"github.com/spf13/cobra"
+)
 
 // var (
-// 	dirSrc       string
-// 	dirDst       string
-// 	archiverType string
+// 	srcDir string
+// 	dstDir string
 // )
 
-// const resources = "W:/Golang/src/Backuper/resources" //TODO specify in common config relative path, the same for other files locations
-// const tgConfig = "telegram.json"
-// const gConfig = "credentials.json"
-// const yaConfig = ""
-// const emailConfig = "email.json"
-// const archivedDataFile = "W:/Golang/src/Backuper/result/data.csv"
+// var resourceDir string
+// var csvDataFile string
+var resourceDir = "W:/Golang/src/Backuper/resources"
+var csvDataFile = "W:/Golang/src/Backuper/resources/data.csv"
 
-// var archiveName = ""
-// var archToRemove = ""
+const (
+	tgConfig    = "telegram.json"
+	gConfig     = "credentials.json"
+	yaConfig    = "yandex.json"
+	emailConfig = "email.json"
+)
 
-// type DirsToBackup struct {
-// 	Dirs []string `json:"dirs"`
-// }
+const ( //TODO refactor names
+	googelDrive    = "gdrive"
+	yandexDisk     = "yadisk"
+	telega         = "telegram"
+	mail           = "email"
+	oneFileMode    = "one"
+	multiFileMode  = "multiple"
+	sourceDir      = "srcDir"
+	destinationDir = "dstDir"
+	tar            = "tar"
+	zip            = "zip"
+	csv            = "csv"
+)
 
-// var backupCmd = &cobra.Command{
-// 	Use:   "backup",
-// 	Short: "Backups files immediately to specified storages",
-// 	Long:  `long descr: backups files immediately`, //TODO examples
-// 	Run: func(cmd *cobra.Command, _ []string) {
-// 		o, _ := cmd.Flags().GetBool("one")
-// 		m, _ := cmd.Flags().GetBool("multiple")
-// 		var arch archiver.ArchiverExtracter
+var backupCmd = &cobra.Command{
+	Use:   "backup",
+	Short: "Backups files immediately to specified storages",
+	Long:  `long descr: backups files immediately`, //TODO examples
+	Run: func(cmd *cobra.Command, _ []string) {
 
-// 		// cmd.Flags().GetString()
+		// select archiver type (tar/zip)
+		var arch Archiver
+		tr, err := cmd.Flags().GetBool(tar)
+		if err != nil {
+			log.Fatal(err)
+		}
+		zp, err := cmd.Flags().GetBool(zip)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-// 		if archiverType == "zip" {
-// 			arch = &archiver.Zip{}
-// 		} else if archiverType == "tar" {
-// 			arch = &archiver.Tar{}
-// 		} else {
-// 			log.Fatal("Wrong archiver type (<zip> and <tar>(will be .tar.gz) supported)")
-// 		}
+		if tr && zp {
+			log.Fatalf("cannot use %s and %s at the same time\n", tar, zip)
+		} else if tr {
+			arch = tarring.NewTar()
+		} else if zp {
+			arch = zipping.NewZip()
+		} else {
+			log.Fatal("Tar/zip mode not selected (use --zip for zip-archiving or --tar for tar + gzip)")
+		}
 
-// 		if o {
-// 			archiveName = archiveDir(arch)
-// 		} else if m {
-// 			archiveName = archiveDirs(arch)
-// 		} else {
-// 			log.Fatal("Single/multiple file mod not selected (use -o for single file or -m for multiple files listed in config)")
-// 		}
+		//select storage type
+		//if not specified, not store
+		var rr records.RecorderRetriever
+		csvFlag, err := cmd.Flags().GetBool(csv)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-// 		repositories := make([]Uploader, 0)
+		if csvFlag {
+			rr = &csv_record.CsvRecorderRetriever{}
+		} else {
+			rr = nil
+		}
 
-// 		if g, err := cmd.Flags().GetBool("gdrive"); err == nil && g {
-// 			repositories = append(repositories, clouds.NewGDrive(filepath.Join(resources, gConfig)))
-// 		}
-// 		if y, err := cmd.Flags().GetBool("yadisk"); err == nil && y {
-// 			repositories = append(repositories, clouds.NewYaDisk(filepath.Join(resources, yaConfig)))
-// 		}
-// 		if t, err := cmd.Flags().GetBool("telegram"); err == nil && t {
-// 			repositories = append(repositories, telegram.NewTelegram(filepath.Join(resources, tgConfig)))
-// 		}
-// 		if e, err := cmd.Flags().GetBool("email"); err == nil && e {
-// 			repositories = append(repositories, email.NewMail(filepath.Join(resources, emailConfig)))
-// 		}
+		// getting source and destination dirs/files
+		srcDir, err := cmd.Flags().GetString(sourceDir)
+		if err != nil || srcDir == "" || strings.Contains(srcDir, "-") {
+			log.Fatal("source dir cannot be empty or begins with '-'(dash)")
+		}
+		dstDir, err := cmd.Flags().GetString(destinationDir)
+		if err != nil || dstDir == "" || strings.Contains(dstDir, "-") {
+			log.Fatal("destination dir cannot be empty or begins with '-'(dash)")
+		}
 
-// 		//TODO сюда можно горутины! сделать бенчмарк
-// 		//TODO сохранять fileId в цикле, обрабатывать тут все ошибки, не дб фатала, тк другие способы отправки могут сработать, если 1 не сработал
+		// getting one- or multi-file mode
+		o, err := cmd.Flags().GetBool(oneFileMode)
+		if err != nil {
+			log.Fatal(err)
+		}
+		m, err := cmd.Flags().GetBool(multiFileMode)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-// 		for _, rep := range repositories {
+		var archiveName string
+		if o && m {
+			log.Fatalf("cannot use %s and %s file modes at the same time\n", oneFileMode, multiFileMode)
+		} else if o {
+			archiveName, err = arch.Archive(srcDir, dstDir)
+			if err != nil {
+				log.Fatalf("error during one-file mode archiving, %v", err)
+			}
+		} else if m {
+			archiveName, err = archiveDirs(arch, srcDir, dstDir)
+			if err != nil {
+				log.Fatalf("error during multi-file mode archiving, %v", err)
+			}
+		} else {
+			log.Fatal("Single/multiple file mode not selected (use -o for single file or -m for multiple files listed in config)")
+		}
 
-// 			// fmt.Printf("Загружаю в %T", rep)
-// 			fileId, err := rep.UploadFile(archiveName)
-// 			if err != nil {
-// 				fmt.Printf("error occured while uploading archive to %T, %v", rep, err)
-// 				continue
-// 			}
+		// select storages for upload
+		storages := make([]Uploader, 0)
+		if g, err := cmd.Flags().GetBool(googelDrive); err == nil && g {
+			storages = append(storages, gdrive.NewGDrive(filepath.Join(resourceDir, gConfig)))
+		} else if err != nil {
+			log.Println(err) //TODO show an error with logrus but not fail
+		}
 
-// 			repName := fmt.Sprintf("%T", rep)
+		if y, err := cmd.Flags().GetBool(yandexDisk); err == nil && y {
+			storages = append(storages, yadisk.NewYaDisk(filepath.Join(resourceDir, yaConfig)))
+		} else if err != nil {
+			log.Println(err)
+		}
 
-// 			if err := storeArchivedFileData(&csv_record.CsvStorage{}, fileId, repName[strings.Index(repName, ".")+1:]); err != nil {
-// 				fmt.Printf("error while storing file id %T, %v", rep, err)
-// 				continue
-// 			}
-// 		}
-// 	},
-// }
+		if t, err := cmd.Flags().GetBool(telega); err == nil && t {
+			storages = append(storages, telegram.NewTelegram(filepath.Join(resourceDir, tgConfig)))
+		} else if err != nil {
+			log.Println(err)
+		}
 
-// func init() {
-// 	rootCmd.AddCommand(backupCmd)
-// 	backupCmd.Flags().BoolP("gdrive", "g", false, "Upload backup archive to Google Drive")
-// 	backupCmd.Flags().BoolP("yadisk", "y", false, "Upload backup archive to Yandex Disk")
-// 	backupCmd.Flags().BoolP("telegram", "t", false, "Sends backup archive to Telegram chat/channel")
-// 	backupCmd.Flags().BoolP("email", "e", false, "Sends backup archive via email")
+		if e, err := cmd.Flags().GetBool(mail); err == nil && e {
+			storages = append(storages, email.NewMail(filepath.Join(resourceDir, emailConfig)))
+		} else if err != nil {
+			log.Println(err)
+		}
 
-// 	backupCmd.Flags().BoolP("one", "o", false, "One file from flag arg")
-// 	backupCmd.Flags().BoolP("multiple", "m", false, "Multiple files listed in *.json file")
+		//TODO REFACTOR to GORUTINES
+		for _, storage := range storages {
+			fmt.Printf("Загружаю %s в %s\n", archiveName, storage.Extension())
 
-// 	backupCmd.Flags().StringVarP(&dirSrc, "dirSrc", "s", "", "Config path")
-// 	backupCmd.MarkFlagRequired("dirSrc")
+			fileId, err := storage.UploadFile(archiveName)
+			if err != nil {
+				log.Printf("error occured while uploading archive to %T, %v\n", storage, err)
+				continue //not fail because other storages may work propely
+			}
 
-// 	backupCmd.Flags().StringVarP(&dirDst, "dstDir", "d", "", "Result path")
-// 	backupCmd.MarkFlagRequired("dstDir")
+			//if some flag like scv is raised
+			if rr != nil {
+				if err := storeUploadedFilesValues(rr, fileId, storage.Extension()); err != nil {
+					log.Println(err)
+				}
+			}
+		}
+	},
+}
 
-// 	backupCmd.Flags().StringVarP(&archiverType, "archiver", "a", "", "Select zip / tar")
-// 	backupCmd.MarkFlagRequired("archiver")
-// }
+func init() {
+	rootCmd.AddCommand(backupCmd)
 
-// Traverses a list of files from dirSrc and archives it
-// func archiveDirs(arch archiver.ArchiverExtracter) string {
-// 	f, err := os.Open(dirSrc)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+	// temporary disabled, .exe file is in Golang/bin dir
+	// wd, err := os.Getwd()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// resourceDir = filepath.Join(wd, "resources")
+	// csvDataFile = filepath.Join(wd, "resources/data.csv")
 
-// 	byteValue, err := ioutil.ReadAll(f)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+	backupCmd.Flags().BoolP(googelDrive, "g", false, "Upload backup archive to Google Drive")
+	backupCmd.Flags().BoolP(yandexDisk, "y", false, "Upload backup archive to Yandex Disk")
+	backupCmd.Flags().BoolP(telega, "t", false, "Sends backup archive to Telegram chat/channel")
+	backupCmd.Flags().BoolP(mail, "e", false, "Sends backup archive via email")
 
-// 	var dirs DirsToBackup
-// 	if err := json.Unmarshal([]byte(byteValue), &dirs); err != nil {
-// 		log.Fatal(err)
-// 	}
+	backupCmd.Flags().BoolP(oneFileMode, "o", false, "One file from arg")
+	backupCmd.Flags().BoolP(multiFileMode, "m", false, "Multiple files listed in *.json-arg file")
 
-// 	tempDir, err := archiver.TempDir(dirDst)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+	backupCmd.Flags().StringP(sourceDir, "s", "", "File to backup path")
+	backupCmd.MarkFlagRequired(sourceDir)
+	backupCmd.Flags().StringP(destinationDir, "d", "", "Result dir with backup archive path")
+	backupCmd.MarkFlagRequired(destinationDir)
 
-// 	if err := archiver.PackArchives(arch, dirs.Dirs, dirDst, tempDir); err != nil {
-// 		log.Fatal(err)
-// 	}
+	// with global variables
+	// backupCmd.Flags().StringVarP(&srcDir, "srcDir", "s", "", "File to backup path")
+	// backupCmd.MarkFlagRequired("dirSrc")
+	// backupCmd.Flags().StringVarP(&dstDir, "dstDir", "d", "", "Result dir with backup archive path")
+	// backupCmd.MarkFlagRequired("dstDir")
 
-// 	//gzipping if tar selected
-// 	switch v := arch.(type) {
-// 	case *archiver.Tar:
-// 		archName := tempDir + "." + archiverType
-// 		if err := archiver.Gzip(archName, dirDst); err != nil {
-// 			log.Fatalf("error gziping file(%v), %v", err, v)
-// 		}
-// 		return archName + ".gz"
-// 	}
-// 	return tempDir + "." + archiverType
-// }
+	backupCmd.Flags().Bool(tar, false, "Use tar/gz")
+	backupCmd.Flags().Bool(zip, false, "Use zip")
+	backupCmd.Flags().Bool(csv, false, "Use csv to store uploaded archives data")
+}
 
-// func archiveDir(arch archiver.ArchiverExtracter) string {
-// 	if err := arch.Archive(dirSrc, dirDst); err != nil {
-// 		log.Fatalf("error while single-file archive processed: %v", err)
-// 	}
+// Traverses a list of files from dirSrc to new dir with timestamp name and archives it
+func archiveDirs(arch Archiver, srcDir, dstDir string) (string, error) {
+	f, err := os.Open(srcDir)
+	if err != nil {
+		return "", err
+	}
 
-// 	//gzipping if tar selected
-// 	switch v := arch.(type) {
-// 	case *archiver.Tar:
-// 		archName := strings.TrimSuffix(dirSrc, filepath.Ext(dirSrc)) + "." + archiverType
-// 		archName = filepath.Join(dirDst, filepath.Base(archName))
-// 		if err := archiver.Gzip(archName, dirDst); err != nil {
-// 			log.Fatalf("error gziping file(%v), %v", err, v)
-// 		}
-// 		return archName + ".gz"
-// 	}
-// 	return dirDst + "." + archiverType
+	byteValue, err := ioutil.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
 
-// 	//cannot remove .tar archive, error is "used by other process"
-// }
+	var dirs DirsToBackup
+	if err := json.Unmarshal([]byte(byteValue), &dirs); err != nil {
+		return "", err
+	}
 
-// func storeArchivedFileData(r Record, fileId, repo string) error {
-// 	file, err := os.OpenFile(archivedDataFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to save to .csv file uploaded arhcive id, %v", err)
-// 	}
-// 	defer func() { _ = file.Close }()
-// 	return r.Store(file, []string{fileId, repo, time.Now().Format("01-02-2006_15:04:05")})
-// }
+	tempDir, err := tempDir(dstDir)
+	if err != nil {
+		return "", err
+	}
+
+	for _, dir := range dirs.Dirs {
+		if _, err := arch.Archive(dir, tempDir); err != nil {
+			return "", err
+		}
+	}
+
+	if _, err := arch.Archive(tempDir, dstDir); err != nil {
+		return "", err
+	}
+
+	if err := os.RemoveAll(tempDir); err != nil {
+		return "", err
+	}
+	return tempDir + fmt.Sprintf(".%s", arch.Extension()), nil
+}
+
+func storeUploadedFilesValues(rr records.RecorderRetriever, fileId, storageName string) error {
+	//TODO TYPE SWITCH
+	if _, ok := rr.(*csv_record.CsvRecorderRetriever); ok {
+		file, err := os.OpenFile(csvDataFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+		if err != nil {
+			return err
+		}
+
+		//possible refactor: RecorderRetriever classes method Record() should open it Writers himself
+		data := []string{fileId, storageName, time.Now().Format("01.02.2006 15:04:05")}
+		if err := rr.Record(file, data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func tempDir(dst string) (string, error) {
+	archiveDir := time.Now().Format("02-01-2006_15-04-05")
+	p := filepath.Join(dst, archiveDir)
+	err := os.Mkdir(p, 0644)
+	if err != nil {
+		return "", err
+	}
+	return p, nil
+}

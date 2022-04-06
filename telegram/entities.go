@@ -27,6 +27,7 @@ type TelegramDownloadError struct {
 }
 
 type Telegram struct {
-	Token  string `json:"token"`
-	ChatId string `json:"chat_id"`
+	Token     string `json:"token"`
+	ChatId    string `json:"chat_id"`
+	extension string
 }

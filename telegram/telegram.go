@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+const ext = "telegram"
+
 var baseUrl = "https://api.telegram.org/bot"
 var fileUrl = "https://api.telegram.org/file/bot"
 var timeout = 30
@@ -34,7 +36,12 @@ func NewTelegram(config string) *Telegram {
 	if err := json.Unmarshal(jFile, &tg); err != nil {
 		log.Fatal(err)
 	}
+	tg.extension = ext
 	return &tg
+}
+
+func (t *Telegram) Extension() string {
+	return t.extension
 }
 
 // Downloads a file from a telegram chat using a chat-bot

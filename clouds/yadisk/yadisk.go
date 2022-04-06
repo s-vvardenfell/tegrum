@@ -2,11 +2,18 @@ package yadisk
 
 import "fmt"
 
+const ext = "yadisk"
+
 type YaDisk struct {
+	extension string
 }
 
 func NewYaDisk(config string) *YaDisk {
-	return &YaDisk{}
+	return &YaDisk{ext}
+}
+
+func (yd *YaDisk) Extension() string {
+	return yd.extension
 }
 
 func (yd *YaDisk) DownLoadFile(fileId, dst string) error {
