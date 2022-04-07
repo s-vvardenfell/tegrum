@@ -88,8 +88,7 @@ Using [this](https://developers.google.com/drive/api/guides/about-sdk) and [this
 #### Yandex Disk
 Not implemented<br>
 #### Telegram
-Create telegram-bot using [botfather]<br>
-(https://core.telegram.org/bots)
+Create telegram-bot using [botfather](https://core.telegram.org/bots)<br>
 Record the received token and the ID of the selected chat in the telegram configuration file (resources/telegram.json)
 ```json
 {
