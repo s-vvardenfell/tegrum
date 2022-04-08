@@ -8,10 +8,8 @@ func main() {
 
 /*
 TODO
-- TODO отработать или убрать
-- описание для функций
 - пути прописать для exe корректные
-- тесты для google
+- тесты для google, todo для goodle - fatal только в New()
 - CI/CD
 - release github
 

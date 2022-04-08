@@ -17,6 +17,7 @@ import (
 )
 
 const ext = "telegram"
+const maxSize int64 = 52428800 //file max size for uploading
 
 var baseUrl = "https://api.telegram.org/bot"
 var fileUrl = "https://api.telegram.org/file/bot"
@@ -64,7 +65,7 @@ func (t *Telegram) DownLoadFile(fileId, dst string) error {
 // using a chat bot specified in the configuration
 // returns file id from telegram server
 func (t *Telegram) UploadFile(filename string) (string, error) {
-	if err := checkSize(filename); err != nil {
+	if err := checkSize(filename, maxSize); err != nil {
 		return "", err
 	}
 
@@ -117,7 +118,8 @@ func (t *Telegram) UploadFile(filename string) (string, error) {
 	return "", errors.New("file uploading to telegram error")
 }
 
-func checkSize(filename string) error {
+// checks if file size smaller than given maxSize
+func checkSize(filename string, maxSize int64) error {
 	files, err := ioutil.ReadDir(filepath.Dir(filename))
 	if err != nil {
 		return err
@@ -125,7 +127,7 @@ func checkSize(filename string) error {
 
 	for _, file := range files {
 		if file.Name() == filepath.Base(filename) {
-			if file.Size() > 52428800 {
+			if file.Size() > maxSize {
 				return errors.New("cannot upload files larger that 50 MB in Telegram")
 			}
 		}
@@ -133,6 +135,7 @@ func checkSize(filename string) error {
 	return nil
 }
 
+// creates a url for uploading file by given token and file id
 func fileLocationFromServer(token, fileId string) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * time.Duration(timeout),
@@ -154,6 +157,7 @@ func fileLocationFromServer(token, fileId string) (string, error) {
 	return "", errors.New("cannot get url with file location on telegram server")
 }
 
+// downloads file by given url to destination dst
 func downloadFileFromServer(url, dst string) error {
 	client := &http.Client{
 		Timeout: time.Second * time.Duration(timeout),
@@ -176,6 +180,7 @@ func downloadFileFromServer(url, dst string) error {
 	return nil
 }
 
+// makes http request
 func doRequest(client *http.Client, method, url string, body io.Reader) ([]byte, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {

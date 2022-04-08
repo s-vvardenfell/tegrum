@@ -68,7 +68,7 @@ var backupCmd = &cobra.Command{
 		}
 
 		if tr && zp {
-			logrus.Fatalf("cannot use %s and %s at the same time\n", tar, zip)
+			logrus.Fatalf("cannot use %s and %s at the same time", tar, zip)
 		} else if tr {
 			arch = tarring.NewTar()
 		} else if zp {
@@ -113,7 +113,7 @@ var backupCmd = &cobra.Command{
 
 		var archiveName string
 		if o && m {
-			logrus.Fatalf("cannot use %s and %s file modes at the same time\n", oneFileMode, multiFileMode)
+			logrus.Fatalf("cannot use %s and %s file modes at the same time", oneFileMode, multiFileMode)
 		} else if o {
 			archiveName, err = arch.Archive(srcDir, dstDir)
 			if err != nil {
@@ -154,13 +154,12 @@ var backupCmd = &cobra.Command{
 			logrus.Warningf("cannot init email, %v", err)
 		}
 
-		//TODO REFACTOR to GORUTINES
 		for _, storage := range storages {
-			logrus.Info("Загружаю %s в %s\n", archiveName, storage.Extension())
+			logrus.Infof("Загружаю %s в %s", archiveName, storage.Extension())
 
 			fileId, err := storage.UploadFile(archiveName)
 			if err != nil {
-				logrus.Warningf("error occured while uploading archive to %T, %v\n", storage, err)
+				logrus.Warningf("error occured while uploading archive to %T, %v", storage, err)
 				continue //not fail because other storages may work propely
 			}
 
@@ -247,23 +246,44 @@ func archiveDirs(arch Archiver, srcDir, dstDir string) (string, error) {
 	return tempDir + fmt.Sprintf(".%s", arch.Extension()), nil
 }
 
+// store given file id using given RecorderRetriever type
 func storeUploadedFilesValues(rr RecorderRetriever, fileId, storageName string) error {
-	//TODO TYPE SWITCH
-	if _, ok := rr.(*csv_record.CsvRecorderRetriever); ok {
+	// if _, ok := rr.(*csv_record.CsvRecorderRetriever); ok {
+	// 	file, err := os.OpenFile(csvDataFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	defer func() { _ = file.Close() }()
+	// 	//possible refactor: RecorderRetriever classes method Record() should open it Writers himself
+	// 	data := []string{fileId, storageName, time.Now().Format("01.02.2006 15:04:05")}
+	// 	if err := rr.Record(file, data); err != nil {
+	// 		return err
+	// 	}
+	// }
+	// return nil
+
+	//TODO refactor: RecorderRetriever clasS method Record() should open it Writers himself
+	//func body should be only rr.Store()
+	switch v := rr.(type) {
+	case *csv_record.CsvRecorderRetriever:
 		file, err := os.OpenFile(csvDataFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 		if err != nil {
-			return err
+			return fmt.Errorf("%v, %v", v, err)
 		}
 		defer func() { _ = file.Close() }()
-		//possible refactor: RecorderRetriever classes method Record() should open it Writers himself
+
 		data := []string{fileId, storageName, time.Now().Format("01.02.2006 15:04:05")}
 		if err := rr.Record(file, data); err != nil {
-			return err
+			return fmt.Errorf("%v, %v", v, err)
 		}
+	default:
+		return fmt.Errorf("not suitable or not processed RecorderRetriever: %T", rr)
+		// case *otherTypes:
 	}
 	return nil
 }
 
+// creates temporary dir to collect all previos archived files from list in -m mode
 func tempDir(dst string) (string, error) {
 	archiveDir := time.Now().Format("02-01-2006_15-04-05")
 	p := filepath.Join(dst, archiveDir)

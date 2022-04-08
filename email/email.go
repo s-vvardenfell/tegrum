@@ -90,6 +90,7 @@ func (m *Email) buildMail(filename string) []byte {
 	return buf.Bytes()
 }
 
+// sends plain message without attachement
 func (m *Email) SendPlainMsg(subject, body string) error {
 	msg := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s\r\n",
 		m.Sender, m.To[0], subject, body))

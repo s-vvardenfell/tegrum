@@ -59,15 +59,15 @@ var retrieveCmd = &cobra.Command{
 		}
 
 		for _, storage := range storages {
-			logrus.Info("Загружаю архив из %s\n", storage.Extension())
+			logrus.Infof("Загружаю архив из %s", storage.Extension())
 
 			fileId, err := fileIdByExt(rr, storage.Extension())
 			if err != nil {
-				logrus.Warningf("cannot get last file id for %s, %v\n", storage.Extension(), err)
+				logrus.Warningf("cannot get last file id for %s, %v", storage.Extension(), err)
 			}
 
 			if err := storage.DownLoadFile(fileId, dstDir); err != nil {
-				logrus.Warningf("error occured while downloading %s archive to %s, %v\n", storage.Extension(), dstDir, err)
+				logrus.Warningf("error occured while downloading %s archive to %s, %v", storage.Extension(), dstDir, err)
 				continue //not fail because other storages may work propely
 			}
 		}
@@ -86,6 +86,7 @@ func init() {
 	retrieveCmd.Flags().Bool(csv, false, "Use csv-file to read uploaded archives data")
 }
 
+// gets file id for downloading by storage type(ext) from specipied RecorderRetriever
 func fileIdByExt(rr RecorderRetriever, ext string) (string, error) {
 	switch v := rr.(type) {
 	case *csv_record.CsvRecorderRetriever:
@@ -101,6 +102,7 @@ func fileIdByExt(rr RecorderRetriever, ext string) (string, error) {
 		}
 		return results[0], nil
 		// case *otherTypes:
+	default:
+		return "", fmt.Errorf("not suitable or not processed RecorderRetriever or file id not found: %T", rr)
 	}
-	return "", fmt.Errorf("record with index %s not found", ext)
 }

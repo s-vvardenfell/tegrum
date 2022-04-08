@@ -1,10 +1,5 @@
-resources/*.json
-resources/*.txt
-resources/*.csv
-result/*.*
-result/*.*
-result/*.*
-result/*.*
+resources/
+result/
 *.json
 todo.txt
 temp/*.*

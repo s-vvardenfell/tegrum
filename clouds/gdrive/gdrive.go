@@ -114,11 +114,10 @@ func (gd *GDrive) UploadFile(filename string) (string, error) {
 	defer func() { _ = file.Close() }()
 
 	f := &drive.File{Name: filename}
-	res, err := gd.Srv.Files. //TODO use not deprecated
-					Create(f).
-					ResumableMedia(context.Background(), file, fileInf.Size(), baseMimeType.String()).
-					ProgressUpdater(func(now, size int64) { fmt.Printf("%d, %d\r", now, size) }).
-					Do()
+	res, err := gd.Srv.Files.Create(f).ResumableMedia(
+		context.Background(), file, fileInf.Size(), baseMimeType.String()).
+		ProgressUpdater(func(now, size int64) { fmt.Printf("%d, %d\r", now, size) }).
+		Do()
 
 	if err != nil {
 		return "", fmt.Errorf("error while uploading file: %v", err)
@@ -126,6 +125,7 @@ func (gd *GDrive) UploadFile(filename string) (string, error) {
 	return res.Id, nil
 }
 
+// shows all files with their id's on disk
 func (gd *GDrive) ShowFilesList() error {
 	r, err := gd.Srv.Files.List().PageSize(10).
 		Fields("nextPageToken, files(id, name)").Do()
