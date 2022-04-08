@@ -36,5 +36,7 @@ jobs:
           echo test, and deploy your project.
           
       - name: Runnig app
-        run: go run main.go
+        with:
+          go-version: '^1.8'
+      - run: go run main.go
         
