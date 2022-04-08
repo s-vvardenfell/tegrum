@@ -9,7 +9,7 @@ func main() {
 /*
 TODO
 - пути прописать для exe корректные
-- тесты для google, todo для goodle - fatal только в New()
+- тесты для google
 - CI/CD
 - release github
 
