@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/smtp"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/s-vvardenfell/Backuper/utility"
+	"github.com/sirupsen/logrus"
 )
 
 const ext = "email"
@@ -32,12 +32,12 @@ type Email struct {
 func NewMail(cnfg string) *Email {
 	f, err := os.Open(cnfg)
 	if err != nil {
-		log.Fatalf("cannot open config file: %v", err)
+		logrus.Fatalf("cannot open config file: %v", err)
 	}
 
 	byteValue, err := ioutil.ReadAll(f)
 	if err != nil {
-		log.Fatalf("reading from file in LoadConfig failed: %v", err)
+		logrus.Fatalf("reading from file in LoadConfig failed: %v", err)
 	}
 
 	var res Email

@@ -1,5 +1,6 @@
 resources/*.json
 resources/*.txt
+resources/*.csv
 result/*.*
 result/*.*
 result/*.*

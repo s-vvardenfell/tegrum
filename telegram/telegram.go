@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const ext = "telegram"
@@ -24,17 +25,17 @@ var timeout = 30
 func NewTelegram(config string) *Telegram {
 	filename, err := filepath.Abs(config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	jFile, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	var tg Telegram
 	if err := json.Unmarshal(jFile, &tg); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	tg.extension = ext
 	return &tg
@@ -137,7 +138,10 @@ func fileLocationFromServer(token, fileId string) (string, error) {
 		Timeout: time.Second * time.Duration(timeout),
 	}
 	url := fmt.Sprintf("%s%s/getFile?file_id=%s", baseUrl, token, fileId)
-	bytesValue := doRequest(client, http.MethodGet, url, nil)
+	bytesValue, err := doRequest(client, http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("doRequest() failed, %v", err)
+	}
 
 	var tr TelegramDownloadResponse
 	if err := json.Unmarshal(bytesValue, &tr); err != nil {
@@ -154,7 +158,11 @@ func downloadFileFromServer(url, dst string) error {
 	client := &http.Client{
 		Timeout: time.Second * time.Duration(timeout),
 	}
-	bytesValue := doRequest(client, http.MethodGet, url, nil)
+	bytesValue, err := doRequest(client, http.MethodGet, url, nil)
+
+	if err != nil {
+		return fmt.Errorf("doRequest() failed, %v", err)
+	}
 
 	//trying to parse response; if can, there is an error
 	var de TelegramDownloadError
@@ -163,25 +171,25 @@ func downloadFileFromServer(url, dst string) error {
 	}
 
 	if err := ioutil.WriteFile(filepath.Join(dst, filepath.Base(url)), bytesValue, 0644); err != nil {
-		log.Fatalf("cannot write result file, %v", err)
+		return fmt.Errorf("cannot write result file, %v", err)
 	}
 	return nil
 }
 
-func doRequest(client *http.Client, method, url string, body io.Reader) []byte {
+func doRequest(client *http.Client, method, url string, body io.Reader) ([]byte, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	bytesValue, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return bytesValue
+	return bytesValue, nil
 }

@@ -9,7 +9,6 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "tergum",
 	Short: "go-written file backuper",
-	Long:  `long descr: go-written file backuper`,
 }
 
 func Execute() {

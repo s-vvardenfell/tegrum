@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	"github.com/s-vvardenfell/tegrum/email"
 	"github.com/s-vvardenfell/tegrum/records/csv_record"
 	"github.com/s-vvardenfell/tegrum/telegram"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +37,7 @@ const (
 	emailConfig = "email.json"
 )
 
-const ( //TODO refactor names
+const (
 	googelDrive    = "gdrive"
 	yandexDisk     = "yadisk"
 	telega         = "telegram"
@@ -60,21 +60,21 @@ var backupCmd = &cobra.Command{
 		var arch Archiver
 		tr, err := cmd.Flags().GetBool(tar)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 		zp, err := cmd.Flags().GetBool(zip)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 
 		if tr && zp {
-			log.Fatalf("cannot use %s and %s at the same time\n", tar, zip)
+			logrus.Fatalf("cannot use %s and %s at the same time\n", tar, zip)
 		} else if tr {
 			arch = tarring.NewTar()
 		} else if zp {
 			arch = zipping.NewZip()
 		} else {
-			log.Fatal("Tar/zip mode not selected (use --zip for zip-archiving or --tar for tar + gzip)")
+			logrus.Fatal("Tar/zip mode not selected (use --zip for zip-archiving or --tar for tar + gzip)")
 		}
 
 		//select storage type
@@ -82,7 +82,7 @@ var backupCmd = &cobra.Command{
 		var rr RecorderRetriever
 		csvFlag, err := cmd.Flags().GetBool(csv)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 
 		if csvFlag {
@@ -94,38 +94,38 @@ var backupCmd = &cobra.Command{
 		// getting source and destination dirs/files
 		srcDir, err := cmd.Flags().GetString(sourceDir)
 		if err != nil || srcDir == "" || strings.Contains(srcDir, "-") {
-			log.Fatal("source dir cannot be empty or begins with '-'(dash)")
+			logrus.Fatal("source dir cannot be empty or begins with '-'(dash)")
 		}
 		dstDir, err := cmd.Flags().GetString(destinationDir)
 		if err != nil || dstDir == "" || strings.Contains(dstDir, "-") {
-			log.Fatal("destination dir cannot be empty or begins with '-'(dash)")
+			logrus.Fatal("destination dir cannot be empty or begins with '-'(dash)")
 		}
 
 		// getting one- or multi-file mode
 		o, err := cmd.Flags().GetBool(oneFileMode)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 		m, err := cmd.Flags().GetBool(multiFileMode)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 
 		var archiveName string
 		if o && m {
-			log.Fatalf("cannot use %s and %s file modes at the same time\n", oneFileMode, multiFileMode)
+			logrus.Fatalf("cannot use %s and %s file modes at the same time\n", oneFileMode, multiFileMode)
 		} else if o {
 			archiveName, err = arch.Archive(srcDir, dstDir)
 			if err != nil {
-				log.Fatalf("error during one-file mode archiving, %v", err)
+				logrus.Fatalf("error during one-file mode archiving, %v", err)
 			}
 		} else if m {
 			archiveName, err = archiveDirs(arch, srcDir, dstDir)
 			if err != nil {
-				log.Fatalf("error during multi-file mode archiving, %v", err)
+				logrus.Fatalf("error during multi-file mode archiving, %v", err)
 			}
 		} else {
-			log.Fatal("Single/multiple file mode not selected (use -o for single file or -m for multiple files listed in config)")
+			logrus.Fatal("Single/multiple file mode not selected (use -o for single file or -m for multiple files listed in config)")
 		}
 
 		// select storages for upload
@@ -133,41 +133,41 @@ var backupCmd = &cobra.Command{
 		if g, err := cmd.Flags().GetBool(googelDrive); err == nil && g {
 			storages = append(storages, gdrive.NewGDrive(filepath.Join(resourceDir, gConfig)))
 		} else if err != nil {
-			log.Println(err) //TODO show an error with logrus but not fail
+			logrus.Warningf("cannot init GDrive, %v", err)
 		}
 
 		if y, err := cmd.Flags().GetBool(yandexDisk); err == nil && y {
 			storages = append(storages, yadisk.NewYaDisk(filepath.Join(resourceDir, yaConfig)))
 		} else if err != nil {
-			log.Println(err)
+			logrus.Warningf("cannot init YaDisk, %v", err)
 		}
 
 		if t, err := cmd.Flags().GetBool(telega); err == nil && t {
 			storages = append(storages, telegram.NewTelegram(filepath.Join(resourceDir, tgConfig)))
 		} else if err != nil {
-			log.Println(err)
+			logrus.Warningf("cannot init Telegram, %v", err)
 		}
 
 		if e, err := cmd.Flags().GetBool(mail); err == nil && e {
 			storages = append(storages, email.NewMail(filepath.Join(resourceDir, emailConfig)))
 		} else if err != nil {
-			log.Println(err)
+			logrus.Warningf("cannot init email, %v", err)
 		}
 
 		//TODO REFACTOR to GORUTINES
 		for _, storage := range storages {
-			fmt.Printf("Загружаю %s в %s\n", archiveName, storage.Extension())
+			logrus.Info("Загружаю %s в %s\n", archiveName, storage.Extension())
 
 			fileId, err := storage.UploadFile(archiveName)
 			if err != nil {
-				log.Printf("error occured while uploading archive to %T, %v\n", storage, err)
+				logrus.Warningf("error occured while uploading archive to %T, %v\n", storage, err)
 				continue //not fail because other storages may work propely
 			}
 
 			//if some flag like scv is raised
 			if rr != nil {
 				if err := storeUploadedFilesValues(rr, fileId, storage.Extension()); err != nil {
-					log.Println(err)
+					logrus.Warning(err)
 				}
 			}
 		}
@@ -180,7 +180,7 @@ func init() {
 	// temporary disabled, .exe file is in Golang/bin dir
 	// wd, err := os.Getwd()
 	// if err != nil {
-	// 	log.Fatal(err)
+	// 	logrus.Fatal(err)
 	// }
 	// resourceDir = filepath.Join(wd, "resources")
 	// csvDataFile = filepath.Join(wd, "resources/data.csv")
