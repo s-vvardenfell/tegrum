@@ -1,6 +1,8 @@
 # tegrum
 Backuper written in go<br>
 
+[![build-test](https://github.com/s-vvardenfell/tegrum/actions/workflows/main.yml/badge.svg)](https://github.com/s-vvardenfell/tegrum/actions/workflows/main.yml)
+
 The common way to use is type `store` command, select archive type zip/tar, multi- or one-file mode, storages to upload<br>
 After uploading archives their id can be saved and archives can be retrieved with the command `retrieve`
 
