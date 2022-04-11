@@ -20,6 +20,7 @@ jobs:
 
     - name: Testing
       run: go test github.com/s-vvardenfell/tegrum/archiver/tarring
+          go test github.com/s-vvardenfell/tegrum/archiver/zipping
             
     - name: Running
       run: go run main.go
