@@ -20,11 +20,6 @@ jobs:
 
     - name: Testing
       run: go test github.com/s-vvardenfell/tegrum/archiver/tarring
-            go test github.com/s-vvardenfell/tegrum/archiver/zipping
-            go test github.com/s-vvardenfell/tegrum/clouds/gdrive
-            go test github.com/s-vvardenfell/tegrum/email
-            go test github.com/s-vvardenfell/tegrum/records/csv_record
-            go test github.com/s-vvardenfell/tegrum/telegram
             
     - name: Running
       run: go run main.go
