@@ -25,10 +25,11 @@ import (
 // 	dstDir string
 // )
 
-// var resourceDir string
-// var csvDataFile string
-var resourceDir = "W:/Golang/src/Backuper/resources"
-var csvDataFile = "W:/Golang/src/Backuper/resources/data.csv"
+var resourceDir string
+var csvDataFile string
+
+// var resourceDir = "W:/Golang/src/Backuper/resources"
+// var csvDataFile = "W:/Golang/src/Backuper/resources/data.csv"
 
 const (
 	tgConfig    = "telegram.json"
@@ -176,13 +177,12 @@ var backupCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(backupCmd)
 
-	// temporary disabled, .exe file is in Golang/bin dir
-	// wd, err := os.Getwd()
-	// if err != nil {
-	// 	logrus.Fatal(err)
-	// }
-	// resourceDir = filepath.Join(wd, "resources")
-	// csvDataFile = filepath.Join(wd, "resources/data.csv")
+	wd, err := os.Getwd()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	resourceDir = filepath.Join(wd, "resources")
+	csvDataFile = filepath.Join(wd, "resources/data.csv")
 
 	backupCmd.Flags().BoolP(googelDrive, "g", false, "Upload backup archive to Google Drive")
 	backupCmd.Flags().BoolP(yandexDisk, "y", false, "Upload backup archive to Yandex Disk")
