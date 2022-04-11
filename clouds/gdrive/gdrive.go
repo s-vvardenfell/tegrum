@@ -92,9 +92,9 @@ func (gd *GDrive) UploadFile(filename string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("cannot delete old file by id %s", filename)
 		}
-	} else {
+	} /*else {
 		return "", fmt.Errorf("cannot get file id by name %s", filename)
-	}
+	}*/
 
 	baseMimeType, err := mimetype.DetectFile(filename)
 	if err != nil {
@@ -113,7 +113,7 @@ func (gd *GDrive) UploadFile(filename string) (string, error) {
 
 	defer func() { _ = file.Close() }()
 
-	f := &drive.File{Name: filename}
+	f := &drive.File{Name: filepath.Base(filename)}
 	res, err := gd.Srv.Files.Create(f).ResumableMedia(
 		context.Background(), file, fileInf.Size(), baseMimeType.String()).
 		ProgressUpdater(func(now, size int64) { fmt.Printf("%d, %d\r", now, size) }).

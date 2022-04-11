@@ -9,7 +9,6 @@ func main() {
 /*
 TODO
 - пути прописать для exe корректные
-- тесты для google
 - CI/CD
 - release github
 

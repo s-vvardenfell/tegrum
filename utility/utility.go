@@ -29,14 +29,15 @@ func PrepareForTest(nestedPkg bool) (tempDir string, resourceDir string, tempFil
 		return "", "", "", err
 	}
 
-	//get temp dir
+	//get temp/resource dir
 	if nestedPkg {
 		tempDir = filepath.Join(filepath.Join(filepath.Dir(wd), "../"), "temp")
+		resourceDir = filepath.Join(filepath.Join(filepath.Dir(wd), "../"), "resources")
 	} else {
 		tempDir = filepath.Join(filepath.Dir(wd), "temp")
+		resourceDir = filepath.Join(filepath.Dir(wd), "resources")
 	}
 
-	resourceDir = filepath.Join(filepath.Dir(wd), "resources")                             //get resource dir
 	tempFileName = filepath.Join(tempDir, time.Now().Format("02-01-2006_15-04-05")+".txt") //create temp file to upload
 	tempFileContent := strconv.Itoa(int(time.Now().Unix()))                                //fill temp file with content
 	if err = os.WriteFile(tempFileName, []byte(tempFileContent), 0666); err != nil {
