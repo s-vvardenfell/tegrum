@@ -9,8 +9,5 @@ func main() {
 /*
 TODO
 - пути прописать для exe корректные
-- CI/CD
 - release github
-
--задачи из todo.txt сюда
 */
